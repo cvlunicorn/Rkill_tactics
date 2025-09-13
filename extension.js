@@ -177,29 +177,28 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
             if (!lib.config.cards.contains('jianrzsbao')) lib.config.cards.push('jianrzsbao');//包名翻译
 
             //选项触发内容，原因见config
-        }, help: {}, config: {}
-    }, package: {
-        character: {
+        }, help: {}, config: {}, package: {
             character: {
+                character: {
+                },
+                translate: {
+                },
             },
-            translate: {
-            },
-        },
-        card: {
             card: {
+                card: {
+                },
+                translate: {
+                },
+                list: [],
             },
-            translate: {
-            },
-            list: [],
-            },
-        skill: {
+            skill: {
 
-        },
-        intro: "",
+            },
+            intro: "",
             author: "※无名玩家",
-                diskURL: "",
-                    forumURL: "",
-                        version: "0.1",
+            diskURL: "",
+            forumURL: "",
+            version: "0.1",
         }, files: { "character": [], "card": [], "skill": [] }
-}
+    }
 })
