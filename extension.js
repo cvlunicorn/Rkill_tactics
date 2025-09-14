@@ -147,7 +147,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
                         "paojixunlian9": "炮击训练",
                         "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
-
+                        "paojixunlian": "炮击训练",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
