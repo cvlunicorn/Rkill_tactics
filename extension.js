@@ -427,6 +427,52 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             selectTarget: 1,
                         },
+                        tanzhaodeng9: {
+                            audio: true,
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip5",
+                            skills: ["tanzhaodeng9_skill"],
+                            ai: {
+                                equipValue: 7,
+                                basic: {
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    equipValue: 1,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -499,6 +545,35 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                     .set("source", trigger.player);
                             },
                         },
+                        tanzhaodeng9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: "phaseBegin",
+                            },
+                            forced: true,
+                            direct: true,
+                            filter: function (event, player) {
+                                if (player.countCards("h") <= 0) return false;
+                                return game.hasPlayer(function (current) {
+                                    return current != playe && current.countCards("h") > 0;
+                                });
+                            },
+                            content: function () {
+                                "step 0";
+                                player.chooseTarget(get.prompt2("tanzhaodeng9"), "回合开始时，你选择一名角色，展示你与其的手牌。", function (card, player, target) {
+                                    return player != target && target.countCards("h") > 0;
+                                })
+                                "step 1";
+                                if (result.bool) {
+                                    var target = result.targets[0];
+                                    player.showHandcards();
+                                    game.delayx();
+                                    target.showHandcards();
+                                    game.delayx();
+                                }
+                            },
+                            "_priority": -25,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -512,6 +587,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
                         "yanhangleiji9": "雁行雷击",
                         "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
+                        "tanzhaodeng9": "探照灯",
+                        "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
+                        "tanzhaodeng9_skill": "回合开始时，你选择一名角色，展示你与其的手牌。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -534,7 +612,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 9, "yanhangleiji9"],
                         ["spade", 10, "yanhangleiji9"],
                         ["spade", 11, "yanhangleiji9"],
-                        
+                        ["diamond", 2, "tanzhaodeng9"],
+
                     ],//牌堆添加
                 };
 
