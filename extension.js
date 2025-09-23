@@ -295,6 +295,138 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        yanhangleiji9: {
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            singleCard: true,
+                            targetprompt: ["出杀", "被杀"],
+                            complexSelect: true,
+                            complexTarget: true,
+                            multicheck: function () {
+                                var card = { name: "sha", isCard: true };
+                                return game.hasPlayer(function (current) {
+                                    return game.hasPlayer(function (current2) {
+                                        return (
+                                            current.inRange(current2) &&
+                                            lib.filter.targetEnabled(card, current, current2)
+                                        );
+                                    });
+                                });
+                            },
+                            filterTarget: function (card, player, target) {
+                                var card = { name: "sha", isCard: true };
+                                return (
+                                    player != target &&
+                                    game.hasPlayer(function (current) {
+                                        return (
+                                            target != current &&
+                                            target.inRange(current) &&
+                                            lib.filter.targetEnabled(card, target, current)
+                                        );
+                                    })
+                                );
+                            },
+                            filterAddedTarget: function (card, player, target, preTarget) {
+                                var card = { name: "sha", isCard: true };
+                                return (
+                                    target != preTarget &&
+                                    preTarget.inRange(target) &&
+                                    lib.filter.targetEnabled(card, preTarget, target)
+                                );
+                            },
+                            content: function () {
+                                "step 0";
+                                if (
+                                    event.directHit ||
+                                    !event.addedTarget ||
+                                    (!_status.connectMode && lib.config.skip_shan && !target.hasSha())
+                                ) {
+                                    event.directfalse = true;
+                                } else {
+                                    target
+                                        .chooseToUse(
+                                            "对" +
+                                            get.translation(event.addedTarget) +
+                                            "使用一张杀",
+                                            function (card, player) {
+                                                if (get.name(card) != "sha") return false;
+                                                return lib.filter.filterCard.apply(this, arguments);
+                                            }
+                                        )
+                                        .set("targetRequired", true)
+                                        .set("complexSelect", true)
+                                        .set("filterTarget", function (card, player, target) {
+                                            if (
+                                                target != _status.event.sourcex &&
+                                                !ui.selected.targets.includes(_status.event.sourcex)
+                                            )
+                                                return false;
+                                            return lib.filter.filterTarget.apply(this, arguments);
+                                        })
+                                        .set("sourcex", event.addedTarget)
+                                        .set("addCount", false)
+                                        .set("respondTo", [player, card]);
+                                }
+                            },
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (player == game.me && get.attitude(viewer, player._trueMe || player) > 0) return 0;
+                                },
+                                basic: {
+                                    order: 8,
+                                    value: 2,
+                                    useful: 1,
+                                },
+                                result: {
+                                    player: (player, target) => {
+                                        if (!target.hasSkillTag("noe") && get.attitude(player, target) > 0) return 0;
+                                        return (
+                                            (player.hasSkillTag("noe") ? 0.32 : 0.15)
+                                        );
+                                    },
+                                    target: (player, target, card) => {
+                                        let targets = [].concat(ui.selected.targets);
+                                        if (_status.event.preTarget) targets.add(_status.event.preTarget);
+                                        if (targets.length) {
+                                            let preTarget = targets.lastItem,
+                                                pre = _status.event.getTempCache("jiedao_result", preTarget.playerid);
+                                            if (pre && pre.card === card && pre.target.isIn())
+                                                return target === pre.target ? pre.eff : 0;
+                                            return (
+                                                get.effect(target, { name: "sha" }, preTarget, player) /
+                                                get.attitude(player, target)
+                                            );
+                                        }
+                                        let arms =
+                                            (target.hasSkillTag("noe") ? 0.32 : -0.15)
+                                        if (!target.mayHaveSha(player, "use")) return arms;
+                                        let sha = game.filterPlayer(get.info({ name: "yanhangleiji9" }).filterAddedTarget),
+                                            addTar = null;
+                                        sha = sha.reduce((num, current) => {
+                                            let eff = get.effect(current, { name: "sha" }, target, player);
+                                            if (eff <= num) return num;
+                                            addTar = current;
+                                            return eff;
+                                        }, -100);
+                                        if (!addTar) return arms;
+                                        sha /= get.attitude(player, target);
+                                        _status.event.putTempCache("yanhangleiji9_result", target.playerid, {
+                                            card: card,
+                                            target: addTar,
+                                            eff: sha,
+                                        });
+                                        return Math.max(arms, sha);
+                                    },
+                                },
+                                tag: {
+                                    use: 1,
+                                    useSha: 1,
+                                },
+                            },
+                            selectTarget: 1,
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -378,6 +510,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
                         "ganraodan9": "干扰弹",
                         "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
+                        "yanhangleiji9": "雁行雷击",
+                        "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -396,6 +530,11 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 4, "ganraodan9"],
                         ["diamond", 5, "ganraodan9"],
                         ["diamond", 6, "ganraodan9"],
+                        ["club", 8, "yanhangleiji9"],
+                        ["club", 9, "yanhangleiji9"],
+                        ["spade", 10, "yanhangleiji9"],
+                        ["spade", 11, "yanhangleiji9"],
+                        
                     ],//牌堆添加
                 };
 
