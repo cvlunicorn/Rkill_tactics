@@ -58,15 +58,14 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             type: "trick",
                             enable: true,
                             selectTarget: -1,
-                            cardcolor: "red",
                             toself: true,
                             filterTarget: function (card, player, target) {
                                 return target == player;
                             },
                             modTarget: true,
                             content: function () {
-                                if (!target.hasSkill('paojixunlian')) {
-                                    target.addTempSkill('paojixunlian', { player: 'phaseEnd' });
+                                if (!target.hasSkill('paojixunlian9_skill')) {
+                                    target.addTempSkill('paojixunlian9_skill', { player: 'phaseEnd' });
                                     target.storage.paojixunlian = 1;
                                 }
                                 else target.storage.paojixunlian++;
@@ -121,10 +120,184 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
-
+                        yuanchengdaodan9: {
+                            image: 'ext:舰R战术/yuanchengdaodan9.png',
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            filterTarget: function (card, player, target) {
+                                return target != player;
+                            },
+                            content: function () {
+                                "step 0";
+                                if (typeof event.baseDamage != "number") event.baseDamage = 1;
+                                if (typeof event.extraDamage != "number") {
+                                    event.extraDamage = 0;
+                                }
+                                if (typeof event.ganraoRequired != "number" || !event.ganraoRequired || event.ganraoRequired < 0) { event.ganraoRequired = 1; }
+                                "step 1";
+                                if (event.directHit) {
+                                    event._result = { bool: false };
+                                } else {
+                                    var next = target.chooseToRespond({ name: "ganraodan9" });
+                                    if (event.ganraoRequired > 1)
+                                        next.set("prompt2", "共需打出" + event.ganraoRequired + "张干扰弹");
+                                    next.set("ai", function (card) {
+                                        var evt = _status.event.getParent();
+                                        if (get.damageEffect(evt.target, evt.player, evt.target) >= 0) return 0;
+                                        if (evt.player.hasSkillTag("notricksource")) return 0;
+                                        if (evt.target.hasSkillTag("notrick")) return 0;
+                                        return get.order(card);
+                                    });
+                                    next.autochoose = lib.filter.autoRespondGanrao;
+                                }
+                                "step 2";
+                                if (result.bool == false) {
+                                    target.damage();
+                                } else {
+                                    event.ganraoRequired--;
+                                    if (event.ganraoRequired > 0) event.goto(1);
+                                }
+                            },
+                            ai: {
+                                wuxie: function (target, card, player, viewer, status) {
+                                    if (player === game.me && get.attitude(viewer, player._trueMe || player) > 0)
+                                        return 0;
+                                    if (
+                                        status *
+                                        get.attitude(viewer, target) *
+                                        get.effect(target, card, player, target) >=
+                                        0
+                                    )
+                                        return 0;
+                                },
+                                basic: {
+                                    order: 5,
+                                    useful: 1,
+                                    value: 5.5,
+                                },
+                                result: {
+                                    player(player, target, card) {
+                                        if (
+                                            player.hasSkillTag(
+                                                "directHit_ai",
+                                                true,
+                                                {
+                                                    target: target,
+                                                    card: card,
+                                                },
+                                                true
+                                            )
+                                        ) { return 0; }
+                                        if (target.hp > 1 && target.hasSkillTag("respondGanrao", true, "respond", true))
+                                            return 0;
+                                        let known = target.getKnownCards(player);
+                                        if (
+                                            known.some((card) => {
+                                                let name = get.name(card, target);
+                                                if (name === "ganraodan9")
+                                                    return lib.filter.cardRespondable(card, target);
+                                                if (name === "wuxie")
+                                                    return lib.filter.cardEnabled(card, target, "forceEnable");
+                                            })
+                                        ) { return 0; }
+                                        if (
+                                            target.hp > 1 ||
+                                            target.countCards("hs", (i) => !known.includes(i)) >
+                                            4.67 - (2 * target.hp) / target.maxHp
+                                        )
+                                            return 0;
+                                        let res = 0,
+                                            att = get.sgnAttitude(player, target);
+                                        res -= att * (0.8 * target.countCards("hs") + 0.6 * target.countCards("e") + 3.6);
+                                        return res;
+                                    },
+                                    target(player, target, card) {
+                                        if (
+                                            player.hasSkillTag(
+                                                "directHit_ai",
+                                                true,
+                                                {
+                                                    target: target,
+                                                    card: card,
+                                                },
+                                                true
+                                            )
+                                        )
+                                            return -2;
+                                        let known = target.getKnownCards(player);
+                                        if (
+                                            known.some((card) => {
+                                                let name = get.name(card, target);
+                                                if (name === "ganraodan9")
+                                                    return lib.filter.cardRespondable(card, target);
+                                                if (name === "wuxie")
+                                                    return lib.filter.cardEnabled(card, target, "forceEnable");
+                                            })
+                                        )
+                                            return -1.2;
+                                        let nh = target.countCards("hs", (i) => !known.includes(i));
+                                        if (target.hp <= 1) {
+                                            if (nh === 0) return -99;
+                                            if (nh === 1) return -60;
+                                            if (nh === 2) return -36;
+                                            if (nh === 3) return -12;
+                                            if (nh === 4) return -8;
+                                            return -5;
+                                        }
+                                        if (target.hasSkillTag("respondGanrao", true, "respond", true)) return -1.35;
+                                        if (!nh) return -2;
+                                        if (nh === 1) return -1.8;
+                                        return -1.5;
+                                    },
+                                },
+                                tag: {
+                                    respond: 2,
+                                    respondGanrao: 2,
+                                    damage: 1,
+                                },
+                            },
+                        },
+                        ganraodan9: {
+                            image: 'ext:舰R战术/ganraodan9.png',
+                            audio: true,
+                            fullskin: true,
+                            type: "basic",
+                            notarget: true,
+                            nodelay: true,
+                            global: ["ganraodan9_skill"],
+                            content: function () {
+                                var info = event.getParent(2).ganraoinfo || event.getParent(3).ganraoinfo;
+                                if (!info) {
+                                    event.finish();
+                                    return;
+                                }
+                                //info.evt.cancel();
+                                event.source = info.source;
+                                event.source.addTempSkill("fengyin", { player: 'phaseEnd' });
+                            },
+                            ai: {
+                                order: 3,
+                                basic: {
+                                    useful: (card, i) => {
+                                        let player = _status.event.player,
+                                            basic = [7, 5.1, 2],
+                                            num = basic[Math.min(2, i)];
+                                        if (player.hp > 2 && player.hasSkillTag("maixie")) num *= 0.57;
+                                        return num;
+                                    },
+                                    value: [5.1, 1],
+                                },
+                                result: {
+                                    player: 1,
+                                },
+                            },
+                        },
                     },
                     skill: {
-                        paojixunlian: {
+                        paojixunlian9_skill: {
                             charlotte: true,
                             locked: true,
                             mark: true,
@@ -141,13 +314,70 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             }
 
                         },
+                        ganraodan9_skill: {//参考诱敌深入
+                            trigger: { target: "shaBefore" },
+                            direct: true,
+                            filter: function (event, player) {
+                                return (
+                                    !event.getParent().directHit.includes(player) && player.hasUsableCard("ganraodan9")
+                                );
+                            },
+                            content: function () {
+                                event.ganraoinfo = {
+                                    source: trigger.player,
+                                    evt: trigger,
+                                };
+                                player
+                                    .chooseToUse(function (card, player) {
+                                        if (get.name(card) != "ganraodan9") return false;
+                                        return lib.filter.cardEnabled(card, player, "forceEnable");
+                                    }, "是否使用干扰弹？")
+                                    .set("ai2", function (card) {
+                                        var target = _status.event.source;
+                                        if (get.attitude(player, target) > 0) { return 0; }
+                                        var list = [];
+                                        var listm = [];
+                                        var listv = [];
+                                        if (target.name1 != undefined) listm = lib.character[target.name1][3];
+                                        else listm = lib.character[target.name][3];
+                                        if (target.name2 != undefined) listv = lib.character[target.name2][3];
+                                        listm = listm.concat(listv);
+                                        var func = function (skill) {
+                                            var info = get.info(skill);
+                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) || lib.skill.pangguanzhe.bannedList.includes(skill) || get.is.locked(skill)) return false;
+                                            return true;
+                                        };
+                                        for (var i = 0; i < listm.length; i++) {
+                                            if (func(listm[i])) list.add(listm[i]);
+                                        }
+                                        var skills = [];
+                                        for (var i of list) {
+                                            var info = lib.translate[i + "_info"];
+                                            if (info && info.indexOf("出牌阶段") != -1) skills.add(i);
+                                            if (info && info.indexOf("指定目标") != -1) skills.add(i);
+                                            if (info && info.indexOf("造成伤害") != -1) skills.add(i);
+                                        }
+
+
+                                        if (skills && skills.length > 0) {
+                                            return 1;
+                                        }
+                                        return 0;
+                                    })
+                                    .set("source", trigger.player);
+                            },
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
                         "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
                         "paojixunlian9": "炮击训练",
                         "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
-                        "paojixunlian": "炮击训练",
+                        "paojixunlian9_skill": "炮击训练",
+                        "yuanchengdaodan9": "远程导弹",
+                        "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
+                        "ganraodan9": "干扰弹",
+                        "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -156,6 +386,16 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 10, "paojixunlian9"],
                         ["club", 11, "paojixunlian9"],
                         ["club", 12, "paojixunlian9"],
+                        ["spade", 1, "yuanchengdaodan9"],
+                        ["spade", 3, "yuanchengdaodan9"],
+                        ["spade", 4, "yuanchengdaodan9"],
+                        ["club", 3, "ganraodan9"],
+                        ["club", 4, "ganraodan9"],
+                        ["club", 5, "ganraodan9"],
+                        ["diamond", 3, "ganraodan9"],
+                        ["diamond", 4, "ganraodan9"],
+                        ["diamond", 5, "ganraodan9"],
+                        ["diamond", 6, "ganraodan9"],
                     ],//牌堆添加
                 };
 
