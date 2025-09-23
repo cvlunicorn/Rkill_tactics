@@ -473,6 +473,50 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
+                        jiaohusheji9: {
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip2",
+                            skills: ["jiaohusheji9_skill"],
+                            ai: {
+                                basic: {
+                                    equipValue: 7.5,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        }
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -574,6 +618,38 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": -25,
                         },
+                        jiaohusheji9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: "damageEnd",
+                            },
+                            filter(event, player) {
+                                return event.source != undefined;
+                            },
+                            check(event, player) {
+                                return get.attitude(player, event.source) <= 0;
+                            },
+                            logTarget: "source",
+                            content(event, trigger, player) {
+                                var card = {
+                                    name: "sha",
+                                    isCard: true,
+                                };
+                                if (player.canUse(card, trigger.source, false)) {
+                                    player.useCard(card, trigger.source, false);
+                                }
+                            },
+                            ai: {
+                                "maixie_defend": true,
+                                effect: {
+                                    target(card, player, target) {
+                                        if (player.hasSkillTag("jueqing", false, target)) return [1, -1];
+                                        return 0.8;
+                                        // if(get.tag(card,'damage')&&get.damageEffect(target,player,player)>0) return [1,0,0,-1.5];
+                                    },
+                                },
+                            },
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -589,7 +665,10 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
                         "tanzhaodeng9": "探照灯",
                         "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
-                        "tanzhaodeng9_skill": "回合开始时，你选择一名角色，展示你与其的手牌。",
+                        "tanzhaodeng9_skill": "探照灯",
+                        "jiaohusheji9": "交互射击",
+                        "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
+                        "jiaohusheji9_skill": "交互射击",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -613,6 +692,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 10, "yanhangleiji9"],
                         ["spade", 11, "yanhangleiji9"],
                         ["diamond", 2, "tanzhaodeng9"],
+                        ["spade", 2, "jiaohusheji9"],
 
                     ],//牌堆添加
                 };
