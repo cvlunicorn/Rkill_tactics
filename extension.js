@@ -10,7 +10,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                     connect: true,//卡包是否可以联机
                     card: {
                         huhangyuanhu9: {
-                            image: 'ext:舰R战术/huhangyuanhu9.png',
+                            image: 'ext:舰R战术/image/huhangyuanhu9.png',
                             audio: true,
                             fullskin: true,
                             type: "trick",
@@ -52,7 +52,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                         },
                         paojixunlian9: {
-                            image: 'ext:舰R战术/paojixunlian9.png',
+                            image: 'ext:舰R战术/image/paojixunlian9.png',
                             audio: true,
                             fullskin: true,
                             type: "trick",
@@ -121,7 +121,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                         },
                         yuanchengdaodan9: {
-                            image: 'ext:舰R战术/yuanchengdaodan9.png',
+                            image: 'ext:舰R战术/image/yuanchengdaodan9.png',
                             audio: true,
                             fullskin: true,
                             type: "trick",
@@ -261,7 +261,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                         },
                         ganraodan9: {
-                            image: 'ext:舰R战术/ganraodan9.png',
+                            image: 'ext:舰R战术/image/ganraodan9.png',
                             audio: true,
                             fullskin: true,
                             type: "basic",
@@ -296,6 +296,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                         },
                         yanhangleiji9: {
+                            image: 'ext:舰R战术/image/yanhangleiji9.png',
                             audio: true,
                             fullskin: true,
                             type: "trick",
@@ -428,6 +429,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             selectTarget: 1,
                         },
                         tanzhaodeng9: {
+                            image: 'ext:舰R战术/image/tanzhaodeng9.png',
                             audio: true,
                             fullskin: true,
                             type: "equip",
@@ -474,6 +476,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             toself: true,
                         },
                         jiaohusheji9: {
+                            image: 'ext:舰R战术/image/jiaohusheji9.png',
                             fullskin: true,
                             type: "equip",
                             subtype: "equip2",
@@ -518,6 +521,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             toself: true,
                         },
                         yingbeimao9: {
+                            image: 'ext:舰R战术/image/yingbeimao9.png',
                             fullskin: true,
                             type: "equip",
                             subtype: "equip1",
