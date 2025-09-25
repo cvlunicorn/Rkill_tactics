@@ -619,7 +619,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
-                        qiaoshaoyuanhu9: {
+                        qianshaoyuanhu9: {
                             image: "ext:舰R战术/image/qianshaoyuanhu9.png",
                             audio: true,
                             fullskin: true,
@@ -643,7 +643,6 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             type: "trick",
                             enable: true,
                             selectTarget: 1,
-                            cardcolor: "red",
                             toself: true,
                             filterTarget: function (card, player, target) {
                                 return target != player;
@@ -744,6 +743,23 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
 
+                        },
+                        yinghuazhuangjia9: {
+                            image: "ext:舰R战术/image/yinghuazhuangjia9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: -1,
+                            cardcolor: "black",
+                            toself: true,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            modTarget: true,
+                            content: function () {
+                                target.addTempSkill("zhuangjiafh", { player: 'phaseBegin' });
+                            },
                         },
                     },
                     skill: {
@@ -982,10 +998,12 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "guochuan9": "过穿",
                         "guochuan9_info": "防止你受到的大于一的伤害。",
                         "guochuan9_skill": "过穿",
-                        "qiaoshaoyuanhu9": "前哨援护",
-                        "qiaoshaoyuanhu9_info": "对一名没有护甲的角色使用，其获得一点护甲。",
+                        "qianshaoyuanhu9": "前哨援护",
+                        "qianshaoyuanhu9_info": "对一名没有护甲的角色使用，其获得一点护甲。",
                         "shujujiaohu9": "数据交互",
                         "shujujiaohu9_info": "你可以交给一名角色任意张牌，然后其交给你等量张牌。",
+                        "yinghuazhuangjia9": "硬化装甲",
+                        "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1012,12 +1030,14 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 2, "jiaohusheji9"],
                         ["spade", 1, "yingbeimao9"],
                         ["heart", 2, "guochuan9"],
-                        ["heart", 7, "qiaoshaoyuanhu9"],
+                        ["heart", 7, "qianshaoyuanhu9"],
                         ["diamond", 7, "qianshaoyuanhu9"],
                         ["diamond", 9, "qianshaoyuanhu9"],
                         ["club", 7, "shujujiaohu9"],
                         ["spade", 7, "shujujiaohu9"],
                         ["spade", 9, "shujujiaohu9"],
+                        ["spade", 11, "yinghuazhuangjia9"],
+                        ["spade", 13, "yinghuazhuangjia9"],
                     ],//牌堆添加
                 };
 
