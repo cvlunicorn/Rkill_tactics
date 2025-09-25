@@ -569,6 +569,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             toself: true,
                         },
                         guochuan9: {
+                            image: "ext:舰R战术/image/guochuan9.png",
                             fullskin: true,
                             type: "equip",
                             subtype: "equip2",
@@ -618,274 +619,292 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
-                    },
-                    skill: {
-                        paojixunlian9_skill: {
-                            charlotte: true,
-                            locked: true,
-                            mark: true,
-                            intro: {
-                                content: function (storage, player, skill) {
-                                    return '出杀次数' + get.translation(player.storage.paojixunlian * 2);
-                                },
+                        qianshaoyuanhu9: {
+                            image: "ext:舰R战术/image/qianshaoyuanhu9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            cardcolor: "red",
+                            toself: true,
+                            filterTarget: function (card, player, target) {
+                                return !target.hujia;
                             },
-                            mod: {
-                                cardUsable: function (card, player, num) {
-                                    if (card.name == 'sha') return num + player.storage.paojixunlian * 2;
-                                },
-                                "_priority": 0,
-                            }
-
-                        },
-                        ganraodan9_skill: {//参考诱敌深入
-                            trigger: { target: "shaBefore" },
-                            direct: true,
-                            filter: function (event, player) {
-                                return (
-                                    !event.getParent().directHit.includes(player) && player.hasUsableCard("ganraodan9")
-                                );
-                            },
+                            modTarget: true,
                             content: function () {
-                                event.ganraoinfo = {
-                                    source: trigger.player,
-                                    evt: trigger,
-                                };
-                                player
-                                    .chooseToUse(function (card, player) {
-                                        if (get.name(card) != "ganraodan9") return false;
-                                        return lib.filter.cardEnabled(card, player, "forceEnable");
-                                    }, "是否使用干扰弹？")
-                                    .set("ai2", function (card) {
-                                        var target = _status.event.source;
-                                        if (get.attitude(player, target) > 0) { return 0; }
-                                        var list = [];
-                                        var listm = [];
-                                        var listv = [];
-                                        if (target.name1 != undefined) listm = lib.character[target.name1][3];
-                                        else listm = lib.character[target.name][3];
-                                        if (target.name2 != undefined) listv = lib.character[target.name2][3];
-                                        listm = listm.concat(listv);
-                                        var func = function (skill) {
-                                            var info = get.info(skill);
-                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) || lib.skill.pangguanzhe.bannedList.includes(skill) || get.is.locked(skill)) return false;
-                                            return true;
-                                        };
-                                        for (var i = 0; i < listm.length; i++) {
-                                            if (func(listm[i])) list.add(listm[i]);
-                                        }
-                                        var skills = [];
-                                        for (var i of list) {
-                                            var info = lib.translate[i + "_info"];
-                                            if (info && info.indexOf("出牌阶段") != -1) skills.add(i);
-                                            if (info && info.indexOf("指定目标") != -1) skills.add(i);
-                                            if (info && info.indexOf("造成伤害") != -1) skills.add(i);
-                                        }
+                                target.changeHujia(1);
+                            },
+                        },
+                        skill: {
+                            paojixunlian9_skill: {
+                                charlotte: true,
+                                locked: true,
+                                mark: true,
+                                intro: {
+                                    content: function (storage, player, skill) {
+                                        return '出杀次数' + get.translation(player.storage.paojixunlian * 2);
+                                    },
+                                },
+                                mod: {
+                                    cardUsable: function (card, player, num) {
+                                        if (card.name == 'sha') return num + player.storage.paojixunlian * 2;
+                                    },
+                                    "_priority": 0,
+                                }
+
+                            },
+                            ganraodan9_skill: {//参考诱敌深入
+                                trigger: { target: "shaBefore" },
+                                direct: true,
+                                filter: function (event, player) {
+                                    return (
+                                        !event.getParent().directHit.includes(player) && player.hasUsableCard("ganraodan9")
+                                    );
+                                },
+                                content: function () {
+                                    event.ganraoinfo = {
+                                        source: trigger.player,
+                                        evt: trigger,
+                                    };
+                                    player
+                                        .chooseToUse(function (card, player) {
+                                            if (get.name(card) != "ganraodan9") return false;
+                                            return lib.filter.cardEnabled(card, player, "forceEnable");
+                                        }, "是否使用干扰弹？")
+                                        .set("ai2", function (card) {
+                                            var target = _status.event.source;
+                                            if (get.attitude(player, target) > 0) { return 0; }
+                                            var list = [];
+                                            var listm = [];
+                                            var listv = [];
+                                            if (target.name1 != undefined) listm = lib.character[target.name1][3];
+                                            else listm = lib.character[target.name][3];
+                                            if (target.name2 != undefined) listv = lib.character[target.name2][3];
+                                            listm = listm.concat(listv);
+                                            var func = function (skill) {
+                                                var info = get.info(skill);
+                                                if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) || lib.skill.pangguanzhe.bannedList.includes(skill) || get.is.locked(skill)) return false;
+                                                return true;
+                                            };
+                                            for (var i = 0; i < listm.length; i++) {
+                                                if (func(listm[i])) list.add(listm[i]);
+                                            }
+                                            var skills = [];
+                                            for (var i of list) {
+                                                var info = lib.translate[i + "_info"];
+                                                if (info && info.indexOf("出牌阶段") != -1) skills.add(i);
+                                                if (info && info.indexOf("指定目标") != -1) skills.add(i);
+                                                if (info && info.indexOf("造成伤害") != -1) skills.add(i);
+                                            }
 
 
-                                        if (skills && skills.length > 0) {
-                                            return 1;
-                                        }
-                                        return 0;
+                                            if (skills && skills.length > 0) {
+                                                return 1;
+                                            }
+                                            return 0;
+                                        })
+                                        .set("source", trigger.player);
+                                },
+                            },
+                            tanzhaodeng9_skill: {
+                                equipSkill: true,
+                                trigger: {
+                                    player: "phaseBegin",
+                                },
+                                forced: true,
+                                direct: true,
+                                filter: function (event, player) {
+                                    if (player.countCards("h") <= 0) return false;
+                                    return game.hasPlayer(function (current) {
+                                        return current != player && current.countCards("h") > 0;
+                                    });
+                                },
+                                content: function () {
+                                    "step 0";
+                                    player.chooseTarget(get.prompt2("tanzhaodeng9"), "回合开始时，你选择一名角色，展示你与其的手牌。", function (card, player, target) {
+                                        return player != target && target.countCards("h") > 0;
                                     })
-                                    .set("source", trigger.player);
+                                    "step 1";
+                                    if (result.bool) {
+                                        var target = result.targets[0];
+                                        player.showHandcards();
+                                        game.delayx();
+                                        target.showHandcards();
+                                        game.delayx();
+                                    }
+                                },
+                                "_priority": -25,
                             },
-                        },
-                        tanzhaodeng9_skill: {
-                            equipSkill: true,
-                            trigger: {
-                                player: "phaseBegin",
-                            },
-                            forced: true,
-                            direct: true,
-                            filter: function (event, player) {
-                                if (player.countCards("h") <= 0) return false;
-                                return game.hasPlayer(function (current) {
-                                    return current != player && current.countCards("h") > 0;
-                                });
-                            },
-                            content: function () {
-                                "step 0";
-                                player.chooseTarget(get.prompt2("tanzhaodeng9"), "回合开始时，你选择一名角色，展示你与其的手牌。", function (card, player, target) {
-                                    return player != target && target.countCards("h") > 0;
-                                })
-                                "step 1";
-                                if (result.bool) {
-                                    var target = result.targets[0];
-                                    player.showHandcards();
-                                    game.delayx();
-                                    target.showHandcards();
-                                    game.delayx();
-                                }
-                            },
-                            "_priority": -25,
-                        },
-                        jiaohusheji9_skill: {
-                            equipSkill: true,
-                            trigger: {
-                                player: "damageEnd",
-                            },
-                            filter(event, player) {
-                                return event.source != undefined;
-                            },
-                            check(event, player) {
-                                return get.attitude(player, event.source) <= 0;
-                            },
-                            logTarget: "source",
-                            content(event, trigger, player) {
-                                var card = {
-                                    name: "sha",
-                                    isCard: true,
-                                };
-                                if (player.canUse(card, trigger.source, false)) {
-                                    player.useCard(card, trigger.source, false);
-                                }
-                            },
-                            ai: {
-                                "maixie_defend": true,
-                                effect: {
-                                    target(card, player, target) {
-                                        if (player.hasSkillTag("jueqing", false, target)) return [1, -1];
-                                        return 0.8;
-                                        // if(get.tag(card,'damage')&&get.damageEffect(target,player,player)>0) return [1,0,0,-1.5];
+                            jiaohusheji9_skill: {
+                                equipSkill: true,
+                                trigger: {
+                                    player: "damageEnd",
+                                },
+                                filter(event, player) {
+                                    return event.source != undefined;
+                                },
+                                check(event, player) {
+                                    return get.attitude(player, event.source) <= 0;
+                                },
+                                logTarget: "source",
+                                content(event, trigger, player) {
+                                    var card = {
+                                        name: "sha",
+                                        isCard: true,
+                                    };
+                                    if (player.canUse(card, trigger.source, false)) {
+                                        player.useCard(card, trigger.source, false);
+                                    }
+                                },
+                                ai: {
+                                    "maixie_defend": true,
+                                    effect: {
+                                        target(card, player, target) {
+                                            if (player.hasSkillTag("jueqing", false, target)) return [1, -1];
+                                            return 0.8;
+                                            // if(get.tag(card,'damage')&&get.damageEffect(target,player,player)>0) return [1,0,0,-1.5];
+                                        },
                                     },
                                 },
                             },
-                        },
-                        yingbeimao9_skill: {
-                            equipSkill: true,
-                            trigger: {
-                                player: "useCard1",
-                            },
-                            filter: function (event, player) {
-                                game.log(event.card);
-                                if (event.card.name == "sha") return true;
-                            },
-                            audio: true,
-                            check: function (event, player) {
-                                var eff = 0;
-                                for (var i = 0; i < event.targets.length; i++) {
-                                    var target = event.targets[i];
-                                    var eff1 = get.damageEffect(target, player, player);
-                                    var eff2 = get.damageEffect(target, player, player, "stab");
-                                    eff += eff2;
-                                    eff -= eff1;
-                                }
-                                return eff >= 0;
-                            },
-                            "prompt2": function (event, player) {
-                                return "将" + get.translation(event.card) + "改为刺杀";
-                            },
-                            content: function () {
-                                game.setNature(trigger.card, "stab");
-                            },
-                            "_priority": -25,
-                        },
-                        guochuan9_skill: {
-                            equipSkill: true,
-                            trigger: {
-                                player: "damageBegin4",
-                            },
-                            forced: true,
-                            audio: true,
-                            filter: function (event, player) {
-                                if (event.num <= 1) return false;
-                                if (player.hasSkillTag("unequip2")) return false;
-                                if (
-                                    event.source &&
-                                    event.source.hasSkillTag("unequip", false, {
-                                        name: event.card ? event.card.name : null,
-                                        target: player,
-                                        card: event.card,
-                                    })
-                                )
-                                    return false;
-                                return true;
-                            },
-                            content: function () {
-                                trigger.cancel();
-                            },
-                            ai: {
-                                filterDamage: true,
-                                skillTagFilter: function (player, tag, arg) {
-                                    if (player.hasSkillTag("unequip2")) return false;
-                                    if (arg && arg.player) {
-                                        if (
-                                            arg.player.hasSkillTag("unequip", false, {
-                                                name: arg.card ? arg.card.name : null,
-                                                target: player,
-                                                card: arg.card,
-                                            })
-                                        )
-                                            return false;
-                                        if (
-                                            arg.player.hasSkillTag("unequip_ai", false, {
-                                                name: arg.card ? arg.card.name : null,
-                                                target: player,
-                                                card: arg.card,
-                                            })
-                                        )
-                                            return false;
-                                        if (arg.player.hasSkillTag("jueqing", false, player)) return false;
+                            yingbeimao9_skill: {
+                                equipSkill: true,
+                                trigger: {
+                                    player: "useCard1",
+                                },
+                                filter: function (event, player) {
+                                    game.log(event.card);
+                                    if (event.card.name == "sha") return true;
+                                },
+                                audio: true,
+                                check: function (event, player) {
+                                    var eff = 0;
+                                    for (var i = 0; i < event.targets.length; i++) {
+                                        var target = event.targets[i];
+                                        var eff1 = get.damageEffect(target, player, player);
+                                        var eff2 = get.damageEffect(target, player, player, "stab");
+                                        eff += eff2;
+                                        eff -= eff1;
                                     }
+                                    return eff >= 0;
+                                },
+                                "prompt2": function (event, player) {
+                                    return "将" + get.translation(event.card) + "改为刺杀";
+                                },
+                                content: function () {
+                                    game.setNature(trigger.card, "stab");
+                                },
+                                "_priority": -25,
+                            },
+                            guochuan9_skill: {
+                                equipSkill: true,
+                                trigger: {
+                                    player: "damageBegin4",
+                                },
+                                forced: true,
+                                audio: true,
+                                filter: function (event, player) {
+                                    if (event.num <= 1) return false;
+                                    if (player.hasSkillTag("unequip2")) return false;
+                                    if (
+                                        event.source &&
+                                        event.source.hasSkillTag("unequip", false, {
+                                            name: event.card ? event.card.name : null,
+                                            target: player,
+                                            card: event.card,
+                                        })
+                                    )
+                                        return false;
+                                    return true;
+                                },
+                                content: function () {
+                                    trigger.cancel();
+                                },
+                                ai: {
+                                    filterDamage: true,
+                                    skillTagFilter: function (player, tag, arg) {
+                                        if (player.hasSkillTag("unequip2")) return false;
+                                        if (arg && arg.player) {
+                                            if (
+                                                arg.player.hasSkillTag("unequip", false, {
+                                                    name: arg.card ? arg.card.name : null,
+                                                    target: player,
+                                                    card: arg.card,
+                                                })
+                                            )
+                                                return false;
+                                            if (
+                                                arg.player.hasSkillTag("unequip_ai", false, {
+                                                    name: arg.card ? arg.card.name : null,
+                                                    target: player,
+                                                    card: arg.card,
+                                                })
+                                            )
+                                                return false;
+                                            if (arg.player.hasSkillTag("jueqing", false, player)) return false;
+                                        }
+                                    },
                                 },
                             },
-                        },
-                        translate: {
-                            "huhangyuanhu9": "护航援护",
-                            "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
-                            "paojixunlian9": "炮击训练",
-                            "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
-                            "paojixunlian9_skill": "炮击训练",
-                            "yuanchengdaodan9": "远程导弹",
-                            "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
-                            "ganraodan9": "干扰弹",
-                            "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
-                            "yanhangleiji9": "雁行雷击",
-                            "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
-                            "tanzhaodeng9": "探照灯",
-                            "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
-                            "tanzhaodeng9_skill": "探照灯",
-                            "jiaohusheji9": "交互射击",
-                            "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
-                            "jiaohusheji9_skill": "交互射击",
-                            "yingbeimao9": "硬被帽",
-                            "yingbeimao9_info": "你使用杀指定目标后，其使用闪后须弃置一张牌，否则此杀依然造成伤害。",
-                            "yingbeimao9_skill": "硬被帽",
-                            "guochuan9": "过穿",
-                            "guochuan9_info": "防止你受到的大于一的伤害。",
-                            "guochuan9_skill": "过穿",
-                        },
-                        list: [
-                            ["heart", 10, "huhangyuanhu9"],
-                            ["heart", 11, "huhangyuanhu9"],
-                            ["heart", 12, "huhangyuanhu9"],
-                            ["club", 10, "paojixunlian9"],
-                            ["club", 11, "paojixunlian9"],
-                            ["club", 12, "paojixunlian9"],
-                            ["spade", 1, "yuanchengdaodan9"],
-                            ["spade", 3, "yuanchengdaodan9"],
-                            ["spade", 4, "yuanchengdaodan9"],
-                            ["club", 3, "ganraodan9"],
-                            ["club", 4, "ganraodan9"],
-                            ["club", 5, "ganraodan9"],
-                            ["diamond", 3, "ganraodan9"],
-                            ["diamond", 4, "ganraodan9"],
-                            ["diamond", 5, "ganraodan9"],
-                            ["diamond", 6, "ganraodan9"],
-                            ["club", 8, "yanhangleiji9"],
-                            ["club", 9, "yanhangleiji9"],
-                            ["spade", 10, "yanhangleiji9"],
-                            ["spade", 11, "yanhangleiji9"],
-                            ["diamond", 2, "tanzhaodeng9"],
-                            ["spade", 2, "jiaohusheji9"],
-                            ["spade", 1, "yingbeimao9"],
-                            ["heart", 2, "guochuan9"],
+                            translate: {
+                                "huhangyuanhu9": "护航援护",
+                                "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
+                                "paojixunlian9": "炮击训练",
+                                "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
+                                "paojixunlian9_skill": "炮击训练",
+                                "yuanchengdaodan9": "远程导弹",
+                                "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
+                                "ganraodan9": "干扰弹",
+                                "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
+                                "yanhangleiji9": "雁行雷击",
+                                "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
+                                "tanzhaodeng9": "探照灯",
+                                "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
+                                "tanzhaodeng9_skill": "探照灯",
+                                "jiaohusheji9": "交互射击",
+                                "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
+                                "jiaohusheji9_skill": "交互射击",
+                                "yingbeimao9": "硬被帽",
+                                "yingbeimao9_info": "你使用杀指定目标后，其使用闪后须弃置一张牌，否则此杀依然造成伤害。",
+                                "yingbeimao9_skill": "硬被帽",
+                                "guochuan9": "过穿",
+                                "guochuan9_info": "防止你受到的大于一的伤害。",
+                                "guochuan9_skill": "过穿",
+                                "qiaoshaoyuanhu9":"前哨援护",
+                                "qiaoshaoyuanhu9_info":"对一名没有护甲的角色使用，其获得一点护甲。",
+                            },
+                            list: [
+                                ["heart", 10, "huhangyuanhu9"],
+                                ["heart", 11, "huhangyuanhu9"],
+                                ["heart", 12, "huhangyuanhu9"],
+                                ["club", 10, "paojixunlian9"],
+                                ["club", 11, "paojixunlian9"],
+                                ["club", 12, "paojixunlian9"],
+                                ["spade", 1, "yuanchengdaodan9"],
+                                ["spade", 3, "yuanchengdaodan9"],
+                                ["spade", 4, "yuanchengdaodan9"],
+                                ["club", 3, "ganraodan9"],
+                                ["club", 4, "ganraodan9"],
+                                ["club", 5, "ganraodan9"],
+                                ["diamond", 3, "ganraodan9"],
+                                ["diamond", 4, "ganraodan9"],
+                                ["diamond", 5, "ganraodan9"],
+                                ["diamond", 6, "ganraodan9"],
+                                ["club", 8, "yanhangleiji9"],
+                                ["club", 9, "yanhangleiji9"],
+                                ["spade", 10, "yanhangleiji9"],
+                                ["spade", 11, "yanhangleiji9"],
+                                ["diamond", 2, "tanzhaodeng9"],
+                                ["spade", 2, "jiaohusheji9"],
+                                ["spade", 1, "yingbeimao9"],
+                                ["heart", 2, "guochuan9"],
 
-                        ],//牌堆添加
-                    };
+                            ],//牌堆添加
+                        };
 
-                    return jianrzsbao;
-                });
+                        return jianrzsbao;
+                    });
             lib.translate['jianrzsbao_card_config'] = '舰R战术卡包';
             lib.config.all.cards.push('jianrzsbao');
             if (!lib.config.cards.contains('jianrzsbao')) lib.config.cards.push('jianrzsbao');//包名翻译
