@@ -650,7 +650,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             filter: function (event, player) {
                                 if (player.countCards("h") <= 0) return false;
                                 return game.hasPlayer(function (current) {
-                                    return current != playe && current.countCards("h") > 0;
+                                    return current != player && current.countCards("h") > 0;
                                 });
                             },
                             content: function () {
