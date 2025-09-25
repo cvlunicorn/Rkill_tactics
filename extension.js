@@ -636,6 +636,115 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 target.changeHujia(1);
                             },
                         },
+                        shujujiaohu9: {
+                            image: "ext:舰R战术/image/shujujiaohu9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            cardcolor: "red",
+                            toself: true,
+                            filterTarget: function (card, player, target) {
+                                return target != player;
+                            },
+                            modTarget: true,
+                            content: function () {
+                                "step 0";
+                                player
+                                    .chooseCardTarget({
+                                        position: "he",
+                                        filterCard: true,
+                                        filterTarget: lib.filter.notMe,
+                                        selectCard: [1, Infinity],
+                                        prompt: get.prompt("shujujiaohu9"),
+                                        prompt2: "将任意张牌交给一名其他角色，然后其交给你等量张牌。",
+                                        ai1(card) {
+                                            if (card.name == "du") return 20;
+                                            var val = get.value(card);
+                                            var player = _status.event.player;
+                                            if (get.position(card) == "e") {
+                                                if (val <= 0) return 10;
+                                                return 10 / val;
+                                            }
+                                            return 6 - val;
+                                        },
+                                        ai2(target) {
+                                            var player = _status.event.player;
+                                            var att = get.attitude(player, target);
+                                            if (ui.selected.cards[0].name == "du") return -2 * att;
+                                            if (att > 0) return 1.5 * att;
+                                            var num = get.select(_status.event.selectCard)[1];
+                                            if (att < 0 && num == 1) return -0.7 * att;
+                                            return att;
+                                        },
+                                    })
+                                    .forResult();
+                                "step 1";
+                                if (result.bool) {
+                                    var target = result.targets[0];
+                                    event.num = result.cards.length;
+                                    event.target = target;
+                                    player.give(result.cards, target);
+                                }
+                                "step 2";
+                                var hs = target.getCards("he");
+                                if (hs.length) {
+                                    if (hs.length <= event.num) event._result = { bool: true, cards: hs };
+                                    else {
+                                        target.chooseCard("he", true, "交给" + get.translation(player) + get.cnNumber(event.num) + "张牌", event.num).set("ai", function (card) {
+                                            var player = _status.event.player;
+                                            var target = _status.event.getParent().player;
+                                            if (get.attitude(player, target) > 0) {
+                                                if (!target.hasShan() && card.name == "shan") return 10;
+                                                if (get.type(card) == "equip" && !get.cardtag(card, "gifts") && target.hasUseTarget(card)) return 10 - get.value(card);
+                                                return 6 - get.value(card);
+                                            }
+                                            return -get.value(card);
+                                        });
+                                    }
+                                } else event.finish();
+                                "step 2";
+                                target.give(result.cards, player);
+
+                            },
+                            ai: {
+                                order: 5,
+                                tag: {
+                                    loseCard: 1,
+                                    gain: 0.5,
+                                },
+                                wuxie: function (target, card, player, viewer) {
+                                    if (get.attitude(player, target) > 0 && get.attitude(viewer, player) > 0) {
+                                        return 0;
+                                    }
+                                },
+                                result: {
+                                    target: function (player, target) {
+                                        if (get.attitude(player, target) <= 0)
+                                            return (
+                                                (target.countCards("he", function (card) {
+                                                    return (
+                                                        get.value(card, target) > 0 && card != target.getEquip("jinhe")
+                                                    );
+                                                }) > 0
+                                                    ? -0.3
+                                                    : 0.3) * Math.sqrt(player.countCards("h"))
+                                            );
+                                        return (
+                                            (target.countCards("ej", function (card) {
+                                                if (get.position(card) == "e") return get.value(card, target) <= 0;
+                                                var cardj = card.viewAs ? { name: card.viewAs } : card;
+                                                return get.effect(target, cardj, target, player) < 0;
+                                            }) > 0
+                                                ? 1.5
+                                                : -0.3) * Math.sqrt(player.countCards("h"))
+                                        );
+                                    },
+                                },
+                            },
+
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -875,6 +984,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "guochuan9_skill": "过穿",
                         "qiaoshaoyuanhu9": "前哨援护",
                         "qiaoshaoyuanhu9_info": "对一名没有护甲的角色使用，其获得一点护甲。",
+                        "shujujiaohu9": "数据交互",
+                        "shujujiaohu9_info": "你可以交给一名角色任意张牌，然后其交给你等量张牌。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -904,6 +1015,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 7, "qiaoshaoyuanhu9"],
                         ["diamond", 7, "qianshaoyuanhu9"],
                         ["diamond", 9, "qianshaoyuanhu9"],
+                        ["club", 7, "shujujiaohu9"],
+                        ["spade", 7, "shujujiaohu9"],
+                        ["spade", 9, "shujujiaohu9"],
                     ],//牌堆添加
                 };
 
