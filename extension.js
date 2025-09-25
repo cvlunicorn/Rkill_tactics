@@ -799,6 +799,33 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        bianduiyuanhu9: {
+                            image: "ext:舰R战术/image/bianduiyuanhu9.png",
+                            fullskin: true,
+                            type: "basic",
+                            savable: true,
+                            selectTarget: -1,
+                            content: function () {
+                                "step 0";
+                                target.recover();
+                                "step 1";
+                                player.changeHujia(1);
+                            },
+                            ai: {
+                                basic: {
+                                    order: 6,
+                                    useful: 10,
+                                    value: [8, 6.5, 5, 4],
+                                },
+                                result: {
+                                    target: 2,
+                                },
+                                tag: {
+                                    recover: 1,
+                                    save: 1,
+                                },
+                            },
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -1042,6 +1069,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "shujujiaohu9_info": "你可以交给一名角色任意张牌，然后其交给你等量张牌。",
                         "yinghuazhuangjia9": "硬化装甲",
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
+                        "bianduiyuanhu9": "编队援护",
+                        "bianduiyuanhu9_info": "有角色濒死时，你可以打出此牌，其回复一点体力，结算后你获得一点护甲。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1076,6 +1105,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 9, "shujujiaohu9"],
                         ["spade", 11, "yinghuazhuangjia9"],
                         ["spade", 13, "yinghuazhuangjia9"],
+                        ["heart", 1, "bianduiyuanhu9"],
+                        ["heart", 13, "bianduiyuanhu9"],
                     ],//牌堆添加
                 };
 
