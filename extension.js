@@ -568,6 +568,56 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
+                        guochuan9: {
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip2",
+                            loseDelay: false,
+                            skills: ["guochuan9_skill"],
+                            ai: {
+                                order: 9.5,
+                                equipValue: function (card, player) {
+                                    if (player.countCards("h", "guochuan9")) return 6;
+                                    return 0;
+                                },
+                                basic: {
+                                    equipValue: 5,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -730,59 +780,112 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": -25,
                         },
-                    },
-                    translate: {
-                        "huhangyuanhu9": "护航援护",
-                        "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
-                        "paojixunlian9": "炮击训练",
-                        "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
-                        "paojixunlian9_skill": "炮击训练",
-                        "yuanchengdaodan9": "远程导弹",
-                        "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
-                        "ganraodan9": "干扰弹",
-                        "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
-                        "yanhangleiji9": "雁行雷击",
-                        "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
-                        "tanzhaodeng9": "探照灯",
-                        "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
-                        "tanzhaodeng9_skill": "探照灯",
-                        "jiaohusheji9": "交互射击",
-                        "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
-                        "jiaohusheji9_skill": "交互射击",
-                        "yingbeimao9": "硬被帽",
-                        "yingbeimao9_info": "你使用杀指定目标后，其使用闪后须弃置一张牌，否则此杀依然造成伤害。",
-                        "yingbeimao9_skill": "硬被帽",
-                    },
-                    list: [
-                        ["heart", 10, "huhangyuanhu9"],
-                        ["heart", 11, "huhangyuanhu9"],
-                        ["heart", 12, "huhangyuanhu9"],
-                        ["club", 10, "paojixunlian9"],
-                        ["club", 11, "paojixunlian9"],
-                        ["club", 12, "paojixunlian9"],
-                        ["spade", 1, "yuanchengdaodan9"],
-                        ["spade", 3, "yuanchengdaodan9"],
-                        ["spade", 4, "yuanchengdaodan9"],
-                        ["club", 3, "ganraodan9"],
-                        ["club", 4, "ganraodan9"],
-                        ["club", 5, "ganraodan9"],
-                        ["diamond", 3, "ganraodan9"],
-                        ["diamond", 4, "ganraodan9"],
-                        ["diamond", 5, "ganraodan9"],
-                        ["diamond", 6, "ganraodan9"],
-                        ["club", 8, "yanhangleiji9"],
-                        ["club", 9, "yanhangleiji9"],
-                        ["spade", 10, "yanhangleiji9"],
-                        ["spade", 11, "yanhangleiji9"],
-                        ["diamond", 2, "tanzhaodeng9"],
-                        ["spade", 2, "jiaohusheji9"],
-                        ["spade", 1, "yingbeimao9"],
+                        guochuan9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: "damageBegin4",
+                            },
+                            forced: true,
+                            audio: true,
+                            filter: function (event, player) {
+                                if (event.num <= 1) return false;
+                                if (player.hasSkillTag("unequip2")) return false;
+                                if (
+                                    event.source &&
+                                    event.source.hasSkillTag("unequip", false, {
+                                        name: event.card ? event.card.name : null,
+                                        target: player,
+                                        card: event.card,
+                                    })
+                                )
+                                    return false;
+                                return true;
+                            },
+                            content: function () {
+                                trigger.cancel();
+                            },
+                            ai: {
+                                filterDamage: true,
+                                skillTagFilter: function (player, tag, arg) {
+                                    if (player.hasSkillTag("unequip2")) return false;
+                                    if (arg && arg.player) {
+                                        if (
+                                            arg.player.hasSkillTag("unequip", false, {
+                                                name: arg.card ? arg.card.name : null,
+                                                target: player,
+                                                card: arg.card,
+                                            })
+                                        )
+                                            return false;
+                                        if (
+                                            arg.player.hasSkillTag("unequip_ai", false, {
+                                                name: arg.card ? arg.card.name : null,
+                                                target: player,
+                                                card: arg.card,
+                                            })
+                                        )
+                                            return false;
+                                        if (arg.player.hasSkillTag("jueqing", false, player)) return false;
+                                    }
+                                },
+                            },
+                        },
+                        translate: {
+                            "huhangyuanhu9": "护航援护",
+                            "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
+                            "paojixunlian9": "炮击训练",
+                            "paojixunlian9_info": "出牌阶段，对自己使用。本回合你使用杀的上限+2。",
+                            "paojixunlian9_skill": "炮击训练",
+                            "yuanchengdaodan9": "远程导弹",
+                            "yuanchengdaodan9_info": "指定一名其他角色为目标，其须打出干扰弹响应，否则你对其造成一点伤害",
+                            "ganraodan9": "干扰弹",
+                            "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
+                            "yanhangleiji9": "雁行雷击",
+                            "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
+                            "tanzhaodeng9": "探照灯",
+                            "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
+                            "tanzhaodeng9_skill": "探照灯",
+                            "jiaohusheji9": "交互射击",
+                            "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
+                            "jiaohusheji9_skill": "交互射击",
+                            "yingbeimao9": "硬被帽",
+                            "yingbeimao9_info": "你使用杀指定目标后，其使用闪后须弃置一张牌，否则此杀依然造成伤害。",
+                            "yingbeimao9_skill": "硬被帽",
+                            "guochuan9": "过穿",
+                            "guochuan9_info": "防止你受到的大于一的伤害。",
+                            "guochuan9_skill": "过穿",
+                        },
+                        list: [
+                            ["heart", 10, "huhangyuanhu9"],
+                            ["heart", 11, "huhangyuanhu9"],
+                            ["heart", 12, "huhangyuanhu9"],
+                            ["club", 10, "paojixunlian9"],
+                            ["club", 11, "paojixunlian9"],
+                            ["club", 12, "paojixunlian9"],
+                            ["spade", 1, "yuanchengdaodan9"],
+                            ["spade", 3, "yuanchengdaodan9"],
+                            ["spade", 4, "yuanchengdaodan9"],
+                            ["club", 3, "ganraodan9"],
+                            ["club", 4, "ganraodan9"],
+                            ["club", 5, "ganraodan9"],
+                            ["diamond", 3, "ganraodan9"],
+                            ["diamond", 4, "ganraodan9"],
+                            ["diamond", 5, "ganraodan9"],
+                            ["diamond", 6, "ganraodan9"],
+                            ["club", 8, "yanhangleiji9"],
+                            ["club", 9, "yanhangleiji9"],
+                            ["spade", 10, "yanhangleiji9"],
+                            ["spade", 11, "yanhangleiji9"],
+                            ["diamond", 2, "tanzhaodeng9"],
+                            ["spade", 2, "jiaohusheji9"],
+                            ["spade", 1, "yingbeimao9"],
+                            ["heart", 2, "guochuan9"],
 
-                    ],//牌堆添加
-                };
+                        ],//牌堆添加
+                    };
 
-                return jianrzsbao;
-            });
+                    return jianrzsbao;
+                });
             lib.translate['jianrzsbao_card_config'] = '舰R战术卡包';
             lib.config.all.cards.push('jianrzsbao');
             if (!lib.config.cards.contains('jianrzsbao')) lib.config.cards.push('jianrzsbao');//包名翻译
