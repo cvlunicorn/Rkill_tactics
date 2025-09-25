@@ -635,6 +635,25 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             content: function () {
                                 target.changeHujia(1);
                             },
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (get.mode() == "guozhan") {
+                                        if (!_status._aozhan) {
+                                            if (!player.isMajor()) {
+                                                if (!viewer.isMajor()) return 0;
+                                            }
+                                        }
+                                    }
+                                },
+                                basic: {
+                                    order: 7.2,
+                                    useful: 4.5,
+                                    value: 7.2,
+                                },
+                                result: {
+                                    target: 2,
+                                },
+                            },
                         },
                         shujujiaohu9: {
                             image: "ext:舰R战术/image/shujujiaohu9.png",
@@ -759,6 +778,25 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             modTarget: true,
                             content: function () {
                                 target.addTempSkill("zhuangjiafh", { player: 'phaseBegin' });
+                            },
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (get.mode() == "guozhan") {
+                                        if (!_status._aozhan) {
+                                            if (!player.isMajor()) {
+                                                if (!viewer.isMajor()) return 0;
+                                            }
+                                        }
+                                    }
+                                },
+                                basic: {
+                                    order: 7.2,
+                                    useful: 4.5,
+                                    value: 7,
+                                },
+                                result: {
+                                    target: 2,
+                                },
                             },
                         },
                     },
