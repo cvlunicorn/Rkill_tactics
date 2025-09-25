@@ -826,6 +826,54 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        tantiaogongji9: {
+                            image: "ext:舰R战术/image/tantiaogongji9.png",
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip1",
+                            distance: {
+                                attackFrom: -2,
+                            },
+                            ai: {
+                                basic: {
+                                    equipValue: 2.5,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            skills: ["tantiaogongji9_skill"],
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -1038,6 +1086,38 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        tantiaogongji9_skill: {
+                            equipSkill: true,
+                            audio: true,
+                            trigger: {
+                                player: "useCardToPlayered",
+                            },
+                            filter: function (event) {
+                                return event.isFirstTarget && event.targets && event.targets.length > 1;
+                            },
+                            forced: true,
+                            logTarget: "target",
+                            content: function () {
+                                "step 0";
+                                player
+                                    .chooseTarget(get.prompt("tantiaogongji9_skill"), "弃置一名角色的一张牌", function (card, player, target) {
+                                        return target != player && trigger.targets.includes(target);
+                                    })
+                                    .set("ai", function (target) {
+                                        var player = _status.event.player;
+                                        returnget.effect(target, { name: "guohe_copy2" }, player, player);
+                                    });
+                                "step 1";
+                                if (result.bool && result.targets && result.targets.length) {
+                                    player.logSkill("tantiaogongji9_skill", result.targets);
+                                    player.discardPlayerCard('he', result.targets[0], 1, true);
+                                }
+                            },
+                            ai: {
+                                expose: 0.25,
+                            },
+                            "_priority": -25,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1071,6 +1151,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
                         "bianduiyuanhu9": "编队援护",
                         "bianduiyuanhu9_info": "有角色濒死时，你可以打出此牌，其回复一点体力，结算后你获得一点护甲。",
+                        "tantiaogongji9": "弹跳攻击",
+                        "tanzhaodeng9_info": "当你使用牌指定两名或以上目标后，你可以弃置其中一名目标一张牌。",
+                        "tantiaogongji9_skill": "弹跳攻击",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1107,6 +1190,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 13, "yinghuazhuangjia9"],
                         ["heart", 1, "bianduiyuanhu9"],
                         ["heart", 13, "bianduiyuanhu9"],
+                        ["club", 13, "tantiaogongji9"],
                     ],//牌堆添加
                 };
 
