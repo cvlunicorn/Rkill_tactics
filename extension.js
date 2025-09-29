@@ -666,14 +666,12 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             content: function () {
                                 "step 0";
                                 player
-                                    .chooseCardTarget({
+                                    .chooseCard({
                                         position: "he",
-                                        filterCard: true,
-                                        filterTarget: lib.filter.notMe,
                                         selectCard: [1, Infinity],
                                         prompt: get.prompt("shujujiaohu9"),
-                                        prompt2: "将任意张牌交给一名其他角色，然后其交给你等量张牌。",
-                                        ai1(card) {
+                                        prompt2: "将任意张牌交给" + get.translation(target) + "，然后其交给你等量张牌。",
+                                        ai(card) {
                                             if (card.name == "du") return 20;
                                             var val = get.value(card);
                                             var player = _status.event.player;
@@ -683,22 +681,11 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                             }
                                             return 6 - val;
                                         },
-                                        ai2(target) {
-                                            var player = _status.event.player;
-                                            var att = get.attitude(player, target);
-                                            if (ui.selected.cards[0].name == "du") return -2 * att;
-                                            if (att > 0) return 1.5 * att;
-                                            var num = get.select(_status.event.selectCard)[1];
-                                            if (att < 0 && num == 1) return -0.7 * att;
-                                            return att;
-                                        },
                                     })
                                     .forResult();
                                 "step 1";
                                 if (result.bool) {
-                                    var target = result.targets[0];
                                     event.num = result.cards.length;
-                                    event.target = target;
                                     player.give(result.cards, target);
                                 }
                                 "step 2";
@@ -729,9 +716,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                     gain: 0.5,
                                 },
                                 wuxie: function (target, card, player, viewer) {
-                                    if (get.attitude(player, target) > 0 && get.attitude(viewer, player) > 0) {
-                                        return 0;
-                                    }
+                                    return 0;
                                 },
                                 result: {
                                     target: function (player, target) {
