@@ -373,7 +373,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             ai: {
                                 wuxie: function (target, card, player, viewer) {
-                                    if (player == game.me && get.attitude(viewer, player._trueMe || player) > 0) return 0;
+                                    return 0;
                                 },
                                 basic: {
                                     order: 8,
@@ -382,17 +382,15 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                                 result: {
                                     player: (player, target) => {
-                                        if (!target.hasSkillTag("noe") && get.attitude(player, target) > 0) return 0;
-                                        return (
-                                            (player.hasSkillTag("noe") ? 0.32 : 0.15)
-                                        );
+                                        if (get.attitude(player, target) < 0) return 0;
+                                        return 0.15;
                                     },
                                     target: (player, target, card) => {
                                         let targets = [].concat(ui.selected.targets);
                                         if (_status.event.preTarget) targets.add(_status.event.preTarget);
                                         if (targets.length) {
                                             let preTarget = targets.lastItem,
-                                                pre = _status.event.getTempCache("jiedao_result", preTarget.playerid);
+                                                pre = _status.event.getTempCache("yanhangleiji9_result", preTarget.playerid);
                                             if (pre && pre.card === card && pre.target.isIn())
                                                 return target === pre.target ? pre.eff : 0;
                                             return (
@@ -400,9 +398,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                                 get.attitude(player, target)
                                             );
                                         }
-                                        let arms =
-                                            (target.hasSkillTag("noe") ? 0.32 : -0.15)
-                                        if (!target.mayHaveSha(player, "use")) return arms;
+                                        if (!target.mayHaveSha(player, "use")) return 0;
                                         let sha = game.filterPlayer(get.info({ name: "yanhangleiji9" }).filterAddedTarget),
                                             addTar = null;
                                         sha = sha.reduce((num, current) => {
@@ -411,14 +407,14 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                             addTar = current;
                                             return eff;
                                         }, -100);
-                                        if (!addTar) return arms;
+                                        if (!addTar) return 0;
                                         sha /= get.attitude(player, target);
                                         _status.event.putTempCache("yanhangleiji9_result", target.playerid, {
                                             card: card,
                                             target: addTar,
                                             eff: sha,
                                         });
-                                        return Math.max(arms, sha);
+                                        return sha;
                                     },
                                 },
                                 tag: {
