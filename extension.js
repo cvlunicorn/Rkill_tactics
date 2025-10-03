@@ -1086,7 +1086,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                     })
                                     .set("ai", function (target) {
                                         var player = _status.event.player;
-                                        returnget.effect(target, { name: "guohe_copy2" }, player, player);
+                                        return get.effect(target, { name: "guohe_copy2" }, player, player);
                                     });
                                 "step 1";
                                 if (result.bool && result.targets && result.targets.length) {
