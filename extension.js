@@ -399,6 +399,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                             );
                                         }
                                         if (!target.mayHaveSha(player, "use")) return 0;
+                                        if (get.attitude(target, player) < 0) return 0;
                                         let sha = game.filterPlayer(get.info({ name: "yanhangleiji9" }).filterAddedTarget),
                                             addTar = null;
                                         sha = sha.reduce((num, current) => {
