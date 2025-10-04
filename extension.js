@@ -17,7 +17,6 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             enable: true,
                             selectTarget: 1,
                             cardcolor: "red",
-                            recastable: true,
                             filterTarget: function (card, player, target) {
                                 return target != player;
                             },
@@ -659,7 +658,6 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             type: "trick",
                             enable: true,
                             selectTarget: 1,
-                            recastable:true,
                             filterTarget: function (card, player, target) {
                                 return target != player;
                             },
