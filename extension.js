@@ -915,6 +915,56 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
+                        duihaijingjieshao9: {
+                            image: "ext:舰R战术/image/duihaijingjieshao9.png",
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip2",
+                            skills: ["duihaijingjieshao9_skill"],
+                            filterTarget: function (card, player, target) {
+                                if (player != target) return false;
+                                return true;
+                            },
+                            selectTarget: function () {
+                                return -1;
+                            },
+                            toself: true,
+                            ai: {
+                                basic: {
+                                    equipValue: 6,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                        },
                     },
                     skill: {
                         paojixunlian9_skill: {
@@ -1163,7 +1213,6 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             trigger: {
                                 target: "useCardToTargeted",
                             },
-                            forced: true,
                             preHidden: true,
                             filter(event, player) {
                                 return event.card.name == "sha";
@@ -1206,6 +1255,36 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": 0,
                         },
+                        duihaijingjieshao9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: "damageBegin4",
+                            },
+                            filter: function (event, player) {
+                                if (player.hasSkillTag("unequip2")) return false;
+                                if (
+                                    event.source &&
+                                    event.source.hasSkillTag("unequip", false, {
+                                        name: event.card ? event.card.name : null,
+                                        target: player,
+                                        card: event.card,
+                                    })
+                                )
+                                    return false;
+                                var cards = player.getEquips("duihaijingjieshao9");
+                                if (!cards.length) return false;
+                                if (event.nature == "thunder") return true;
+                            },
+                            content: function () {
+                                trigger.cancel();
+                                var e2 = player.getEquips("duihaijingjieshao9");
+                                if (e2.length) {
+                                    player.discard(e2);
+                                }
+                                player.removeSkill("duihaijingjieshao9_skill");
+                            },
+                            "_priority": -25,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1245,6 +1324,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "tantiaogongji9": "弹跳攻击",
                         "tanzhaodeng9_info": "当你使用牌指定两名或以上目标后，你可以弃置其中一名目标一张牌。",
                         "tantiaogongji9_skill": "弹跳攻击",
+                        "duihaijingjieshao9": "对海警戒哨",
+                        "duihaijingjieshao9_info": "你即将受到雷电伤害时，可以弃置此牌，免疫此次伤害",
+                        "duihaijingjieshao9_skill": "对海警戒哨",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1283,6 +1365,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 13, "bianduiyuanhu9"],
                         ["club", 13, "tantiaogongji9"],
                         ["diamond", 4, "lanzusheji9"],
+                        ["club", 8, "duihaijingjieshao9"],
                     ],//牌堆添加
                 };
 
