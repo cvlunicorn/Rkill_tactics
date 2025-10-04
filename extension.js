@@ -804,6 +804,42 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        lanzusheji9: {
+                            image: "ext:舰R战术/image/lanzusheji9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: -1,
+                            cardcolor: "black",
+                            toself: true,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            modTarget: true,
+                            content: function () {
+                                target.addTempSkill("lanzusheji9_skill", { player: 'phaseBegin' });
+                            },
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (get.mode() == "guozhan") {
+                                        if (!_status._aozhan) {
+                                            if (!player.isMajor()) {
+                                                if (!viewer.isMajor()) return 0;
+                                            }
+                                        }
+                                    }
+                                },
+                                basic: {
+                                    order: 7.2,
+                                    useful: 4.5,
+                                    value: 7,
+                                },
+                                result: {
+                                    target: 2,
+                                },
+                            },
+                        },
                         bianduiyuanhu9: {
                             image: "ext:舰R战术/image/bianduiyuanhu9.png",
                             fullskin: true,
@@ -1123,6 +1159,53 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": -25,
                         },
+                        lanzusheji9_skill: {
+                            trigger: {
+                                target: "useCardToTargeted",
+                            },
+                            forced: true,
+                            preHidden: true,
+                            filter(event, player) {
+                                return event.card.name == "sha";
+                            },
+                            content() {
+                                "step 0";
+                                var eff = get.effect(player, trigger.card, trigger.player, trigger.player);
+                                trigger.player.chooseControl().set('choiceList', [
+                                    '受到一点伤害',
+                                    '令' + get.translation(trigger.card) + '无效',
+                                ])
+                                    .set("ai", function () {
+                                        if (_status.event.eff > 0) {
+                                            return 0;
+                                        }
+                                        return 1;
+                                    })
+                                    .set("eff", eff);
+                                "step 1";
+                                if (result.index == 0) {
+                                    trigger.player.damage("nocard");
+                                }
+                                else trigger.getParent().excluded.add(player);
+                            },
+                            ai: {
+                                effect: {
+                                    target_use(card, player, target, current) {
+                                        if (card.name == "sha" && get.attitude(player, target) < 0) {
+                                            if (_status.event.name == "lanzusheji9_skill") return;
+                                            if (get.attitude(player, target) > 0 && current < 0) return "zerotarget";
+                                            if (player.hp < 2) return "zerotarget";
+                                            if (player.hasSkill("jiu") || player.hasSkill("tianxianjiu")) return;
+                                            if (player.hp < 4) {
+                                                return [1, 0, 0.3, 0];
+                                            }
+                                            return [1, 0, 1, -0.5];
+                                        }
+                                    },
+                                },
+                            },
+                            "_priority": 0,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1154,6 +1237,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "shujujiaohu9_info": "你可以交给一名角色任意张牌，然后其交给你等量张牌。",
                         "yinghuazhuangjia9": "硬化装甲",
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
+                        "lanzusheji9": "拦阻射击",
+                        "lanzusheji9_info": "出牌阶段使用，你获得：其他角色指定你为杀的目标后，其选择受到一点伤害或令此杀无效。直到你的下回合开始。",
+                        "lanzusheji9_skill": "拦阻射击",
                         "bianduiyuanhu9": "编队援护",
                         "bianduiyuanhu9_info": "有角色濒死时，你可以打出此牌，其回复一点体力，结算后你获得一点护甲。",
                         "tantiaogongji9": "弹跳攻击",
@@ -1196,6 +1282,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 1, "bianduiyuanhu9"],
                         ["heart", 13, "bianduiyuanhu9"],
                         ["club", 13, "tantiaogongji9"],
+                        ["diamond", 4, "lanzusheji9"],
                     ],//牌堆添加
                 };
 
