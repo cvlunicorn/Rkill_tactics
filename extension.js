@@ -300,7 +300,32 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             fullskin: true,
                             type: "trick",
                             enable: true,
-                            singleCard: true,
+
+                            selectTarget: 1,
+                            filterTarget: function (card, player, target) {
+                                return player != target;
+                            },
+                            content: function () {
+                                if (!target.hasSkill("_wulidebuff_jinshui")) { target.addSkill('_wulidebuff_jinshui'); }
+                                target.addMark('_wulidebuff_jinshui', 1);
+                                if (!target.hasSkill("_wulidebuff_jiansu")) { target.addSkill('_wulidebuff_jiansu'); }
+                                target.addMark('_wulidebuff_jiansu', 1);
+                            },
+                            ai: {
+                                order: 9.01,
+                                useful: 1,
+                                value: 5,
+                                result: {
+                                    target: function (player, target) {
+                                        return -1;
+                                    },
+                                },
+                                tag: {
+                                    loseCard: 1,
+                                    discard: 1,
+                                },
+                            },
+                            /* singleCard: true,
                             targetprompt: ["出杀", "被杀"],
                             complexSelect: true,
                             complexTarget: true,
@@ -420,8 +445,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 tag: {
                                     use: 1,
                                     useSha: 1,
-                                },
-                            },
+                                }, 
+                        },*/
                             selectTarget: 1,
                         },
                         tanzhaodeng9: {
