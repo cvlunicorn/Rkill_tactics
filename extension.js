@@ -1322,7 +1322,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "bianduiyuanhu9": "编队援护",
                         "bianduiyuanhu9_info": "有角色濒死时，你可以打出此牌，其回复一点体力，结算后你获得一点护甲。",
                         "tantiaogongji9": "弹跳攻击",
-                        "tanzhaodeng9_info": "当你使用牌指定两名或以上目标后，你可以弃置其中一名目标一张牌。",
+                        "tantiaogongji9_info": "当你使用牌指定两名或以上目标后，你可以弃置其中一名目标一张牌。",
                         "tantiaogongji9_skill": "弹跳攻击",
                         "duihaijingjieshao9": "对海警戒哨",
                         "duihaijingjieshao9_info": "你即将受到雷电伤害时，可以弃置此牌，免疫此次伤害",
