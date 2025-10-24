@@ -1297,7 +1297,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "ganraodan9": "干扰弹",
                         "ganraodan9_info": "以你为目标的杀生效前，你可以使用此牌，令此杀的使用者本回合非锁定技失效。",
                         "yanhangleiji9": "雁行雷击",
-                        "yanhangleiji9_info": "出牌阶段，对一名有 使用杀的目标 的角色使用，令其对另一名指定角色使用一张杀。",
+                        "yanhangleiji9_info": "出牌阶段，对一名其他角色使用，令其 进水 减速。",
                         "tanzhaodeng9": "探照灯",
                         "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
                         "tanzhaodeng9_skill": "探照灯",
