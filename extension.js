@@ -965,7 +965,38 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
                             },
                         },
+                        zhaomingdanjiaozheng9: {
+                            image: "ext:舰R战术/image/zhaomingdanjiaozheng9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            filterTarget: function (card, player, target) {
+                                return player != target;
+                            },
+                            content: function () {
+                                if (!target.hasSkill("zhaomingdanjiaozheng9_skill")) { target.addTempSkill('zhaomingdanjiaozheng9_skill', { global: "phaseEnd" }); }
+                            },
+                            ai: {
+                                order: 11,
+                                useful: 1,
+                                value: [5, 1],
+                                result: {
+                                    target: function (player, target) {
+                                        return -1.5;
+                                    },
+                                },
+                                tag: {
+                                    loseCard: 1,
+                                    discard: 1,
+                                },
+                            },
+                        },
                     },
+                    //上面是卡牌
+                    //
+                    //下面是技能
                     skill: {
                         paojixunlian9_skill: {
                             charlotte: true,
@@ -1285,6 +1316,28 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": -25,
                         },
+                        zhaomingdanjiaozheng9_skill: {
+                            charlotte: true,
+                            force: true,
+                            intro: {
+                                marktext: "照明弹矫正",
+                                content: function () {
+                                    return "不能使用或打出手牌";
+                                },
+                            },
+                            mod: {
+                                cardEnabled2: function (card, player) {
+                                    if (get.position(card) == 'h') return false;
+                                },
+                            },
+                            ai: {
+                                effect: {
+                                    target: function (card, player, target) {
+                                        if (get.tag(card, 'damage')) return [0, -999999];
+                                    },
+                                },
+                            },
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1327,6 +1380,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "duihaijingjieshao9": "对海警戒哨",
                         "duihaijingjieshao9_info": "你即将受到雷电伤害时，可以弃置此牌，免疫此次伤害",
                         "duihaijingjieshao9_skill": "对海警戒哨",
+                        "zhaomingdanjiaozheng9": "照明弹矫正",
+                        "zhaomingdanjiaozheng9_info": "对一名其他角色使用。其不能使用或打出手牌直到回合结束。"
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1366,6 +1421,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 13, "tantiaogongji9"],
                         ["diamond", 4, "lanzusheji9"],
                         ["club", 8, "duihaijingjieshao9"],
+                        ["club", 6, "zhaomingdanjiaozheng9"],
                     ],//牌堆添加
                 };
 
