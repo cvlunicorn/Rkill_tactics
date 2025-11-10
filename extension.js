@@ -987,11 +987,58 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                         return -1.5;
                                     },
                                 },
-                                tag: {
-                                    loseCard: 1,
-                                    discard: 1,
+                            },
+                        },
+                        gailiangbeimaodan9: {
+                            image: "ext:舰R战术/image/gailiangbeimaodan9.png",
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip1",
+                            distance: {
+                                attackFrom: -1,
+                            },
+                            ai: {
+                                equipValue: function (card, player) {
+                                    return Math.min(6 - player.countCards("h", "sha"), 4);
+                                },
+                                basic: {
+                                    equipValue: 3.5,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
                                 },
                             },
+                            skills: ["gailiangbeimaodan9_skill"],
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
                         },
                     },
                     //上面是卡牌
@@ -1338,6 +1385,33 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        gailiangbeimaodan9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: ["shaMiss", "eventNeutralized"],
+                            },
+                            usable: 1,
+                            filter: function (event, player) {
+                                if (!event.card || event.card.name != "sha") return false;
+                                if (event.cards) {
+                                    for (var i = 0; i < event.cards.length; i++) {
+                                        if (get.position(event.cards[i], true) == "o") return true;
+                                    }
+                                }
+                                return false;
+                            },
+                            content: function () {
+                                "step 0";
+                                var cards = trigger.cards.slice(0);
+                                for (var i = 0; i < cards.length; i++) {
+                                    if (get.position(cards[i], true) != "o") {
+                                        cards.splice(i--, 1);
+                                    }
+                                }
+                                player.gain(cards, "gain2");
+                            },
+                            "_priority": -25,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1381,7 +1455,10 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "duihaijingjieshao9_info": "你即将受到雷电伤害时，可以弃置此牌，免疫此次伤害",
                         "duihaijingjieshao9_skill": "对海警戒哨",
                         "zhaomingdanjiaozheng9": "照明弹矫正",
-                        "zhaomingdanjiaozheng9_info": "对一名其他角色使用。其不能使用或打出手牌直到回合结束。"
+                        "zhaomingdanjiaozheng9_info": "对一名其他角色使用。其不能使用或打出手牌直到回合结束。",
+                        "gailiangbeimaodan9": "改良被帽弹",
+                        "gailiangbeimaodan9_info": "每回合限一次，你使用杀被闪抵消后，你可以获得此杀对应的实体牌。",
+                        "gailiangbeimaodan9_skill": "改良被帽弹",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1422,6 +1499,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 4, "lanzusheji9"],
                         ["club", 8, "duihaijingjieshao9"],
                         ["club", 6, "zhaomingdanjiaozheng9"],
+                        ["club", 2, "gailiangbeimaodan9"],
                     ],//牌堆添加
                 };
 
