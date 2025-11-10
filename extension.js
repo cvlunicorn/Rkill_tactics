@@ -1088,6 +1088,57 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
+                        chuanjiahangdan9: {
+                            image: "ext:舰R战术/image/chuanjiahangdan9.png",
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip1",
+                            distance: {
+                                attackFrom: -1,
+                            },
+                            skills: ["chuanjiahangdan9_skill"],
+                            ai: {
+                                equipValue: function (card, player) {
+                                    return 8;
+                                },
+                                basic: {
+                                    equipValue: 7,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        },
                     },
                     //上面是卡牌
                     //
@@ -1507,6 +1558,22 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": -25,
                         },
+                        chuanjiahangdan9_skill: {
+                            equipSkill: true,
+                            trigger: {
+                                player: "useCardToPlayered",
+                            },
+                            check: function (event, player) {
+                                return get.attitude(player, event.target) <= 0;
+                            },
+                            filter: function (event, player) {
+                                return (event.card.name == "wanjian" || event.card.name == "jinjuzy9") && event.target.countCards("he");
+                            },
+                            content: function () {
+                                trigger.target.chooseToDiscard("he", true);
+                            },
+                            "_priority": -25,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1557,7 +1624,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "chuanjialiudan9": "穿甲榴弹",
                         "chuanjialiudan9_info": "你使用杀指定目标后，若其有防具，你可以弃置一张牌令其防具失效直至此杀结算结束。",
                         "chuanjialiudan9_skill": "穿甲榴弹",
-
+                        "chuanjiahangdan9": "穿甲航弹",
+                        "chuanjiahangdan9_info": "你使用万箭齐发/近距支援指定目标后，其须弃置一张牌(没有则不弃)",
+                        "chuanjiahangdan9_skill": "穿甲航弹",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1600,6 +1669,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 6, "zhaomingdanjiaozheng9"],
                         ["club", 2, "gailiangbeimaodan9"],
                         ["diamond", 1, "chuanjialiudan9"],
+                        ["heart", 3, "chuanjiahangdan9"],
+
                     ],//牌堆添加
                 };
 
