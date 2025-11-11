@@ -733,6 +733,15 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                             return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
                                         }), player
                                     );
+                                } else {
+                                    if (player.getCards("e", function (i) {
+                                        return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
+                                    }).length) {
+                                        player.gain(player.getCards("e", function (i) {
+                                            return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
+                                        }), "gain2");
+
+                                    }
                                 }
                                 if (target.isDamaged()) { target.recover(1); }
                                 delete target.storage.shujujiaohu9;
