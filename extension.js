@@ -1261,6 +1261,43 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        duikongyujing9: {
+                            image: "ext:舰R战术/image/duikongyujing9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            cardcolor: "black",
+                            filterTarget: function (card, player, target) {
+                                return !target.hasSkill("duikongyujing9_skill");
+                            },
+                            content: function () {
+                                target.addTempSkill("duikongyujing9_skill", { player: 'phaseBegin' });
+                            },
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (get.mode() == "guozhan") {
+                                        if (!_status._aozhan) {
+                                            if (!player.isMajor()) {
+                                                if (!viewer.isMajor()) return 0;
+                                            }
+                                        }
+                                    }
+                                },
+                                basic: {
+                                    order: 7.2,
+                                    useful: 4.5,
+                                    value: 5,
+                                },
+                                result: {
+                                    target: function (target) {
+                                        if (target.hasSkill("fangkong2")) return 1.5;
+                                        return 0;
+                                    },
+                                },
+                            },
+                        },
                     },
                     //上面是卡牌
                     //
@@ -1730,6 +1767,18 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": 0,
                         },
+                        duikongyujing9_skill: {
+                            trigger: {
+                                global: ["logSkill"],
+                            },
+                            filter: function (event, player) {
+                                return event.player == player && event.skill == 'fangkong2';
+                            },
+                            content() {
+                                player.chooseToGuanxing(2);
+                                player.draw(1);
+                            },
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1788,6 +1837,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "zhuangjiajiaban9_skill": "装甲甲板",
                         "quanjiabantuji9": "全甲板突击",
                         "quanjiabantuji9_info": "使用此牌后你弃置所有手牌，然后视为使用任意锦囊牌。",
+                        "duikongyujing9": "对空预警",
+                        "duikongyujing9_info": "可重铸，对一名角色使用。直到其下回合开始，其使用防空结算后卜算2， 摸一张牌。",
+                        "duikongyujing9_skill": "对空预警",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1834,6 +1886,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 6, "zhuangjiajiaban9"],
                         ["heart", 8, "quanjiabantuji9"],
                         ["heart", 9, "quanjiabantuji9"],
+                        ["spade", 5, "duikongyujing9"],
+                        ["spade", 6, "duikongyujing9"],
+                        ["spade", 8, "duikongyujing9"],
                     ],//牌堆添加
                 };
 
