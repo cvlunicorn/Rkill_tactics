@@ -1269,6 +1269,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             enable: true,
                             selectTarget: 1,
                             cardcolor: "black",
+                            recastable: true,
                             filterTarget: function (card, player, target) {
                                 return !target.hasSkill("duikongyujing9_skill");
                             },
