@@ -1348,7 +1348,76 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
                             },
                             toself: true,
-                        }
+                        },
+                        leijishulian9: {
+                            image: "ext:舰R战术/image/leijishulian9.png",
+                            enable: true,
+                            type: "trick",
+                            fullskin: true,
+                            filterTarget: function (card, player, target) {
+                                return target != player && player.countCards("h") > 1;
+                            },
+                            content: function () {
+                                "step 0";
+                                player.chooseToDiscard("h");
+                                "step 1";
+                                if (result.bool) {
+                                    event.suit = get.suit(result.cards[0]);
+                                    target.chooseToDiscard(1, "弃置一张与" + get.translation(result.cards[0]) + "花色相同的牌，或受到一点雷电伤害", { suit: event.suit }).set('ai', function (card, player) {
+                                        return 9 - get.value(card);
+                                    });;
+                                } else { event.finish(); }
+                                "step 2";
+                                if (!result.bool || (result.cards[0] && event.suit != get.suit(result.cards[0]))) target.damage(1, "thunder");
+                            },
+                            ai: {
+                                basic: {
+                                    order: 5,
+                                    useful: 2,
+                                    value: 6,
+                                },
+                                yingbian: function (card, player, targets, viewer) {
+                                    if (get.attitude(viewer, player) <= 0) return 0;
+                                    if (
+                                        game.hasPlayer(function (current) {
+                                            return (
+                                                !targets.includes(current) &&
+                                                lib.filter.targetEnabled2(card, player, current) &&
+                                                get.effect(current, card, player, player) > 0
+                                            );
+                                        })
+                                    )
+                                        return 6;
+                                    return 0;
+                                },
+                                result: {
+                                    target: (player, target, card) => {
+                                        let suit = get.suit(card),
+                                            view = player.hasSkillTag("viewHandcard", null, target, true),
+                                            fz = 0,
+                                            fm = 0;
+                                        target.getCards("h", (i) => {
+                                            if (i.isKnownBy(player)) {
+                                                if (suit !== get.suit(i)) {
+                                                    if (view || get.is.shownCard(i)) return -2;
+                                                    fz++;
+                                                    fm++;
+                                                } else if (!view && !get.is.shownCard(i)) fm++;
+                                            } else {
+                                                fz += 0.75;
+                                                fm++;
+                                            }
+                                        });
+                                        if (!fm) return 0;
+                                        return (-2 * fz) / fm;
+                                    },
+                                },
+                                tag: {
+                                    damage: 1,
+                                },
+                            },
+                            selectTarget: 1,
+                        },
                     },
                     //上面是卡牌
                     //
@@ -1976,6 +2045,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "duikongyujing9_skill": "对空预警",
                         "fangkongdanmu9": "防空弹幕",
                         "fangkongdanmu9_info": "你视为拥有防空，若你已有防空则是为拥有对空防御。",
+                        "leijishulian9": "雷击熟练",
+                        "leijishulian9_info": "出牌阶段，弃置1张手牌对一名角色使用。目标角色须弃置一张与你弃置牌相同花色的手牌，否则雷击熟练对该角色造成1点雷属性伤害。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -2028,6 +2099,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 10, "fangkongdanmu9"],
                         ["diamond", 11, "fangkongdanmu9"],
                         ["diamond", 12, "fangkongdanmu9"],
+                        ["diamond", 6, "leijishulian9"],
+                        ["club", 5, "leijishulian9"],
+                        ["club", 6, "leijishulian9"],
                     ],//牌堆添加
                 };
 
