@@ -683,86 +683,77 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             type: "trick",
                             enable: true,
                             selectTarget: 1,
+                            filter: function (event, player) {
+                                return player.countCards("h");
+                            },
                             filterTarget: function (card, player, target) {
-                                return target != player;
+                                return true;
                             },
                             modTarget: true,
                             content: function () {
                                 "step 0";
-                                player
-                                    .chooseCard({
-                                        position: "he",
-                                        selectCard: [1, Infinity],
-                                        prompt: get.prompt("shujujiaohu9"),
-                                        prompt2: "将任意张牌交给" + get.translation(target) + "，然后其交给你等量张牌。",
-                                        ai(card) {
-                                            if (card.name == "du") return 20;
-                                            var val = get.value(card);
-                                            var player = _status.event.player;
-                                            if (get.position(card) == "e") {
-                                                if (val <= 0) return 10;
-                                                return 10 / val;
-                                            }
-                                            return 6 - val;
-                                        },
-                                    })
-                                    .forResult();
+                                player.chooseCard(true, get.prompt2("shujujiaohu9"), "h", 1);
                                 "step 1";
-                                if (result.bool) {
-                                    event.num = result.cards.length;
-                                    player.give(result.cards, target);
-                                }
+                                if (!result.bool) event.finish();
+                                target.storage.shujujiaohu9 = result.cards;
+                                player.give(result.cards, target);
                                 "step 2";
-                                var hs = target.getCards("he");
-                                if (hs.length) {
-                                    if (hs.length <= event.num) event._result = { bool: true, cards: hs };
-                                    else {
-                                        target.chooseCard("he", true, "交给" + get.translation(player) + get.cnNumber(event.num) + "张牌", event.num).set("ai", function (card) {
-                                            var player = _status.event.player;
-                                            var target = _status.event.getParent().player;
-                                            if (get.attitude(player, target) > 0) {
-                                                if (!target.hasShan() && card.name == "shan") return 10;
-                                                if (get.type(card) == "equip" && !get.cardtag(card, "gifts") && target.hasUseTarget(card)) return 10 - get.value(card);
-                                                return 6 - get.value(card);
+                                var suit = get.suit(target.storage.shujujiaohu9);
+                                if (!target.countCards("h")) event._result = { control: "refanjian_hp" };
+                                else
+                                    target.chooseControl("shujujiaohu9_card", "shujujiaohu9_hp").ai = function (event, player) {
+                                        var cards = player.getCards("he", { suit: get.suit(player.storage.shujujiaohu9) });
+                                        //game.log(get.attitude(player, event.player));
+                                        if (get.attitude(player, event.player) > 0) return 0;
+                                        if (cards.length >= 1) {
+                                            for (var i = 0; i < cards.length; i++) {
+                                                if (get.tag(cards[i], "save")) return 1;
                                             }
-                                            return -get.value(card);
-                                        });
-                                    }
-                                } else event.finish();
-                                "step 2";
-                                target.give(result.cards, player);
-
+                                        }
+                                        if (player.hp == 1) return 0;
+                                        for (var i = 0; i < cards.length; i++) {
+                                            if (get.value(cards[i]) >= 8) return 1;
+                                        }
+                                        if (cards.length > 1 && player.hp > 2) return 1;
+                                        if (cards.length > 2) return 1;
+                                        return 0;
+                                    };
+                                "step 3";
+                                if (result.control == "shujujiaohu9_card") {
+                                    target.showHandcards();
+                                } else if (result.control == "shujujiaohu9_hp") {
+                                    target.damage("nocard");
+                                    event.finish();
+                                }
+                                "step 4";
+                                var suit = get.suit(target.storage.shujujiaohu9);
+                                if (player != target) {
+                                    target.give(
+                                        target.getCards("he", function (i) {
+                                            return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
+                                        }), player
+                                    );
+                                }
+                                if (target.isDamaged()) { target.recover(1); }
+                                delete target.storage.shujujiaohu9;
                             },
                             ai: {
-                                order: 5,
+                                basic: {
+                                    order: 9,
+                                    useful: 2,
+                                    value: 7,
+                                },
+                                order: 9,
                                 tag: {
                                     loseCard: 1,
-                                    gain: 0.5,
+                                    gain: 2,
                                 },
                                 wuxie: function (target, card, player, viewer) {
                                     return 0;
                                 },
                                 result: {
                                     target: function (player, target) {
-                                        if (get.attitude(player, target) <= 0)
-                                            return (
-                                                (target.countCards("he", function (card) {
-                                                    return (
-                                                        get.value(card, target) > 0 && card != target.getEquip("jinhe")
-                                                    );
-                                                }) > 0
-                                                    ? -0.3
-                                                    : 0.3) * Math.sqrt(player.countCards("h"))
-                                            );
-                                        return (
-                                            (target.countCards("ej", function (card) {
-                                                if (get.position(card) == "e") return get.value(card, target) <= 0;
-                                                var cardj = card.viewAs ? { name: card.viewAs } : card;
-                                                return get.effect(target, cardj, target, player) < 0;
-                                            }) > 0
-                                                ? 1.5
-                                                : -0.3) * Math.sqrt(player.countCards("h"))
-                                        );
+                                        return -target.countCards("he") - (player.countCards("h", "du") ? 1 : 0);
                                     },
                                 },
                             },
@@ -1939,7 +1930,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "qianshaoyuanhu9": "前哨援护",
                         "qianshaoyuanhu9_info": "对一名没有护甲的角色使用，其获得一点护甲。",
                         "shujujiaohu9": "数据交互",
-                        "shujujiaohu9_info": "你可以交给一名角色任意张牌，然后其交给你等量张牌。",
+                        "shujujiaohu9_info": "出牌阶段，对一名角色使用。你展示一张手牌并交给目标角色，然后令选择以下一项发动：1.交给你所有相同花色的手牌，然后恢复1点体力。2.受到1点伤害。",
+                        "shujujiaohu9_card": "交出牌",
+                        "shujujiaohu9_hp": "受伤害",
                         "yinghuazhuangjia9": "硬化装甲",
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
                         "lanzusheji9": "拦阻射击",
