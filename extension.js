@@ -1299,6 +1299,56 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        fangkongdanmu9: {
+                            image: "ext:舰R战术/image/fangkongdanmu9.png",
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip5",
+                            skills: ["fangkongdanmu9_skill"],
+                            ai: {
+                                equipValue: function (card, player) {
+                                    if (player.hasSkill("duikongfangyu")) return 0;
+                                    if (player.hasSkill("fangkong2")) return 5;
+                                    return 6;
+                                },
+                                basic: {
+                                    equipValue: 5.5,
+                                    order: (card, player) => {
+                                        const equipValue = get.equipValue(card, player) / 20;
+                                        return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
+                                    },
+                                    useful: 2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.getCards("e").includes(card) && !player.canEquip(card, true)) return 0.01;
+                                        const info = get.info(card),
+                                            current = player.getEquip(info.subtype),
+                                            value = current && card != current && get.value(current, player);
+                                        let equipValue = info.ai.equipValue || info.ai.basic.equipValue;
+                                        if (typeof equipValue == "function") {
+                                            if (method == "raw") return equipValue(card, player);
+                                            if (method == "raw2") return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != "number") equipValue = 0;
+                                        if (method == "raw") return equipValue;
+                                        if (method == "raw2") return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: (player, target, card) => get.equipResult(player, target, card.name),
+                                },
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: (card, player, target) => player == target && target.canEquip(card, true),
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == "o") target.equip(cards[0]);
+                            },
+                            toself: true,
+                        }
                     },
                     //上面是卡牌
                     //
@@ -1780,6 +1830,87 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 player.draw(1);
                             },
                         },
+                        fangkongdanmu9_skill: {
+                            equipSkill: true,
+                            nodelay: true,
+                            lastDo: true,
+                            trigger: {
+                                global: "useCardToPlayered",
+                            },
+                            filter: function (event, player) {
+                                if (player.hasSkill("fangkong2")) return false;
+                                if (event.getParent().triggeredTargets3.length > 1) return false;
+                                if (get.type(event.card) != 'trick') return false;
+                                if (get.info(event.card).multitarget) return false;
+                                if (!player.countCards('he')) return false;
+                                if (event.targets.length < 2) return false;
+                                for (var i = 0; i < event.targets.length; i++) {
+                                    if (!event.targets[i].hasSkill("fangkong2_aibiexuan")) return true;
+                                } return false;
+                            },
+                            direct: true,
+                            content: function () {
+                                'step 0'
+                                var next = player.chooseCardTarget({
+                                    prompt: get.prompt('防空保护对象'),
+                                    prompt2: ('当一名角色使用的锦囊牌指定了至少两名角色为目标时，<br>你可弃置两张牌（拥有对空防御则改为一张）令此牌对距离你' + (player.countMark('jinengup') + 1) + '内的任意名角色无效。'),
+                                    position: 'hejs',
+                                    selectCard: function () {
+                                        var player = get.player();
+                                        if (player.hasSkill('duikongfangyu')) {
+                                            return 1;//对空防御的技能效果。
+                                        }
+                                        return 2;
+                                    },
+                                    selectTarget: function () {
+                                        var player = get.player();
+                                        return [1, 7];
+                                    },
+                                    filterCard: function (card, player) {
+                                        return lib.filter.cardDiscardable(card, player);
+                                    },
+                                    filterTarget: function (card, player, target) {
+                                        if (_status.event.targets.includes(target) && !target.hasSkill('fangkong2_aibiexuan')) {
+                                            if (player.hasSkill('duikongfangyu')) {
+                                                return get.distance(player, target) <= (5);
+                                            }
+                                            return get.distance(player, target) <= (1 + 2 * player.countMark('jinengup'));
+                                        }
+                                    },
+                                    ai1: function (card) {
+                                        return 7 - get.useful(card);
+                                    },
+                                    ai2: function (target) {
+                                        var player = get.player(); var trigger = _status.event.getTrigger();
+
+                                        if (!target.hasSkill("fangkong2_aibiexuan")) { return -get.effect(target, trigger.card, trigger.player, _status.event.player); }
+                                        return 0;
+                                    }, targets: trigger.targets,
+                                });
+                                'step 1'
+                                if (result.bool) {
+                                    player.discard(result.cards);
+                                    event.target = result.targets;
+                                    if (event.target != undefined) { for (var i = 0; i < trigger.targets.length; i += (1)) { if (event.target.includes(trigger.targets[i])) { trigger.getParent().excluded.add(trigger.targets[i]); trigger.targets[i].addSkill('fangkong_aibiexuan'); game.log('取消卡牌目标', trigger.targets[i], '编号', i) } } };//三级选择，集合target是否包含trigger.target。同时测试是否选到了目标。
+                                    player.logSkill('fangkong2', event.target);
+                                }
+                            },
+                            subSkill: {
+                                aibiexuan: {
+                                    trigger: {
+                                        global: "useCardEnd",
+                                    },
+                                    forced: true,
+                                    content: function () {
+                                        game.log('保护结束');
+                                        player.removeSkill('fangkong2_aibiexuan');
+                                    },
+                                    sub: true,
+                                    "_priority": 0,
+                                },
+                            },
+                            "_priority": 0,
+                        },
                     },
                     translate: {
                         "huhangyuanhu9": "护航援护",
@@ -1841,6 +1972,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "duikongyujing9": "对空预警",
                         "duikongyujing9_info": "可重铸，对一名角色使用。直到其下回合开始，其使用防空结算后卜算2， 摸一张牌。",
                         "duikongyujing9_skill": "对空预警",
+                        "fangkongdanmu9": "防空弹幕",
+                        "fangkongdanmu9_info": "你视为拥有防空，若你已有防空则是为拥有对空防御。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1890,6 +2023,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 5, "duikongyujing9"],
                         ["spade", 6, "duikongyujing9"],
                         ["spade", 8, "duikongyujing9"],
+                        ["diamond", 10, "fangkongdanmu9"],
+                        ["diamond", 11, "fangkongdanmu9"],
+                        ["diamond", 12, "fangkongdanmu9"],
                     ],//牌堆添加
                 };
 
