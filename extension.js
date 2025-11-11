@@ -1184,6 +1184,83 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             toself: true,
                         },
+                        quanjiabantuji9: {
+                            image: "ext:舰R战术/image/quanjiabantuji9.png",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: -1,
+                            toself: true,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            modTarget: true,
+                            content: function () {
+                                'step 0'
+                                player.chooseToDiscard(true, "h", player.countCards("h"));
+                                "step 1"
+                                //game.log(lib.inpile);
+                                var list = [];
+                                for (var i = 0; i < lib.inpile.length; i++) {
+                                    var name = lib.inpile[i];
+                                    var type = get.type(name);
+                                    //game.log(name);
+                                    if (type == 'trick') {
+                                        if (lib.filter.cardEnabled({ name: name }, player) && name != "quanjiabantuji9") {
+                                            list.push([get.translation(type), '', name]);
+                                        }
+                                    }
+                                }
+                                if (list == "") {
+                                    game.log('牌堆中没有符合要求的牌');
+                                    event.finish();
+                                }
+                                player.chooseButton([
+                                    '全甲板突击',
+                                    [list, 'vcard'],
+                                ]).set('filterButton', button => {
+                                    var event = _status.event;
+                                    if (ui.selected.buttons) {
+                                        return true;
+                                    }
+                                }).set('ai', function (button) {
+                                    return (get.value(button.link) || 1);
+
+                                }).set('selectButton', 1);
+                                'step 2'
+                                if (result && result.bool && result.links[0]) {
+                                    player.chooseUseTarget(true, get.name(result.links[0]));
+                                } else {
+                                    event.finish();
+                                }
+                            },
+                            ai: {
+                                basic: {
+                                    order: 1,
+                                    useful: 3,
+                                    value: 6.5,
+                                },
+                                order: 1,
+                                result: {
+                                    player: function (player) {
+                                        var num = 0;
+                                        var cards = player.getCards("h");
+                                        if (cards.length >= 3 && player.hp >= 3) return 0;
+                                        for (var i = 0; i < cards.length; i++) {
+                                            num += Math.max(0, get.value(cards[i], player, "raw"));
+                                        }
+                                        num /= cards.length;
+                                        num *= Math.min(cards.length, player.hp);
+                                        return 12 - num;
+                                    },
+                                },
+                                nokeep: true,
+                                skillTagFilter: function (player, tag, arg) {
+                                    if (tag === "nokeep") return (!arg || (arg.card && get.name(arg.card) === "tao")) && player.isPhaseUsing() && !player.getStat("skill").qice && player.hasCard(card => get.name(card) != "tao", "h");
+                                },
+                            },
+                        },
                     },
                     //上面是卡牌
                     //
@@ -1709,6 +1786,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "zhuangjiajiaban9": "装甲甲板",
                         "zhuangjiajiaban9_info": "你受到锦囊牌伤害时可以进行判定，若判定结果为红色，此伤害-1。",
                         "zhuangjiajiaban9_skill": "装甲甲板",
+                        "quanjiabantuji9": "全甲板突击",
+                        "quanjiabantuji9_info": "使用此牌后你弃置所有手牌，然后视为使用任意锦囊牌。",
                     },
                     list: [
                         ["heart", 10, "huhangyuanhu9"],
@@ -1753,7 +1832,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 1, "chuanjialiudan9"],
                         ["heart", 3, "chuanjiahangdan9"],
                         ["heart", 6, "zhuangjiajiaban9"],
-
+                        ["heart", 8, "quanjiabantuji9"],
+                        ["heart", 9, "quanjiabantuji9"],
                     ],//牌堆添加
                 };
 
