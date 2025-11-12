@@ -669,7 +669,13 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 basic: {
                                     order: 7.2,
                                     useful: 4.5,
-                                    value: 7.2,
+                                    value: (card, player, index, method) => {
+                                        if (!player.hujia) return 7.2;
+                                        if (game.countPlayer(function (current) {
+                                            return current != player && !current.hujia && get.attitude(player, current);
+                                        })) return 6;
+                                        return 1;
+                                    },
                                 },
                                 result: {
                                     target: 2,
@@ -1192,6 +1198,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             enable: true,
                             selectTarget: -1,
                             toself: true,
+                            filter: function (event, player) {
+                                return player.countCards("h") > 0;
+                            },
                             filterTarget: function (card, player, target) {
                                 return target == player;
                             },
@@ -1200,37 +1209,37 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 'step 0'
                                 player.chooseToDiscard(true, "h", player.countCards("h"));
                                 "step 1"
-                                //game.log(lib.inpile);
-                                var list = [];
-                                for (var i = 0; i < lib.inpile.length; i++) {
-                                    var name = lib.inpile[i];
-                                    var type = get.type(name);
-                                    //game.log(name);
-                                    if (type == 'trick') {
-                                        if (lib.filter.cardEnabled({ name: name }, player) && name != "quanjiabantuji9") {
-                                            list.push([get.translation(type), '', name]);
+                                if (result.bool) {
+                                    var list = [];
+                                    for (var i = 0; i < lib.inpile.length; i++) {
+                                        var name = lib.inpile[i];
+                                        var type = get.type(name);
+                                        //game.log(name);
+                                        if (type == 'trick') {
+                                            if (lib.filter.cardEnabled({ name: name }, player) && name != "quanjiabantuji9") {
+                                                list.push([get.translation(type), '', name]);
+                                            }
                                         }
                                     }
-                                }
-                                if (list == "") {
-                                    game.log('牌堆中没有符合要求的牌');
-                                    event.finish();
-                                }
-                                player.chooseButton([
-                                    '全甲板突击',
-                                    [list, 'vcard'],
-                                ]).set('filterButton', button => {
-                                    var event = _status.event;
-                                    if (ui.selected.buttons) {
-                                        return true;
+                                    if (list == "") {
+                                        game.log('牌堆中没有符合要求的牌');
+                                        event.finish();
                                     }
-                                }).set('ai', function (button) {
-                                    return (get.value(button.link) || 1);
+                                    game.log(list);
+                                    player.chooseButton([
+                                        '全甲板突击',
+                                        [list, 'vcard'],
+                                    ]).set('ai', function (button) {
+                                        var card = {
+                                            name: button.link[2],
+                                        };
+                                        return (get.value(card) || 1);
 
-                                }).set('selectButton', 1);
+                                    }).set('selectButton', 1);
+                                } else { event.finish(); }
                                 'step 2'
                                 if (result && result.bool && result.links[0]) {
-                                    player.chooseUseTarget(true, get.name(result.links[0]));
+                                    player.chooseUseTarget(true, result.links[0][2]);
                                 } else {
                                     event.finish();
                                 }
@@ -1239,7 +1248,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 basic: {
                                     order: 1,
                                     useful: 3,
-                                    value: 6.5,
+                                    value: 7,
                                 },
                                 order: 1,
                                 result: {
@@ -2100,8 +2109,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 11, "fangkongdanmu9"],
                         ["diamond", 12, "fangkongdanmu9"],
                         ["diamond", 6, "leijishulian9"],
-                        ["club", 5, "leijishulian9","thunder"],
-                        ["club", 6, "leijishulian9","thunder"],
+                        ["club", 5, "leijishulian9", "thunder"],
+                        ["club", 6, "leijishulian9", "thunder"],
                     ],//牌堆添加
                 };
 
