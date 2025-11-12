@@ -2100,8 +2100,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 11, "fangkongdanmu9"],
                         ["diamond", 12, "fangkongdanmu9"],
                         ["diamond", 6, "leijishulian9"],
-                        ["club", 5, "leijishulian9"],
-                        ["club", 6, "leijishulian9"],
+                        ["club", 5, "leijishulian9","thunder"],
+                        ["club", 6, "leijishulian9","thunder"],
                     ],//牌堆添加
                 };
 
