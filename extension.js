@@ -9,6 +9,751 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                     name: 'jianrzsbao',//卡包命名
                     connect: true,//卡包是否可以联机
                     card: {
+                        "sheji9": {
+                            image: 'ext:舰R战术/image/sheji9.png',
+                            audio: true,
+                            global: ["shashanwuxietao"],
+                            nature: ["thunder", "fire", "kami", "ice"],
+                            type: "basic",
+                            enable: true,
+                            autoViewAs: "sha",
+                            usable: 1,
+                            updateUsable: "phaseUse",
+                            range: function (card, player, target) {
+                                return player.inRange(target);
+                            },
+                            selectTarget: 1,
+                            cardPrompt: function (card) {
+                                if (card.nature == 'stab') return '出牌阶段，对你攻击范围内的一名角色使用。其须使用一张【闪】，且在此之后需弃置一张手牌（没有则不弃）。否则你对其造成1点伤害。';
+                                if (lib.linked.contains(card.nature)) return '出牌阶段，对你攻击范围内的一名角色使用。其须使用一张【闪】，否则你对其造成1点' + get.translation(card.nature) + '属性伤害。';
+                                return '出牌阶段，对你攻击范围内的一名角色使用。其须使用一张【闪】，否则你对其造成1点伤害。';
+                            },
+                            "yingbian_prompt": function (card) {
+                                var str = '';
+                                if (get.cardtag(card, 'yingbian_hit')) {
+                                    str += '此牌不可被响应';
+                                }
+                                if (get.cardtag(card, 'yingbian_damage')) {
+                                    if (str.length) str += '；';
+                                    str += '此牌的伤害值基数+1';
+                                }
+                                if (!str.length || get.cardtag(card, 'yingbian_add')) {
+                                    if (str.length) str += '；';
+                                    str += '当你使用此牌选择目标后，你可为此牌增加一个目标';
+                                }
+                                return str;
+                            },
+                            yingbian: function (event) {
+                                var card = event.card, bool = false;
+                                if (get.cardtag(card, 'yingbian_hit')) {
+                                    bool = true;
+                                    event.directHit.addArray(game.players);
+                                    game.log(card, '不可被响应');
+                                }
+                                if (get.cardtag(card, 'yingbian_damage')) {
+                                    bool = true;
+                                    if (typeof event.baseDamage != 'number') event.baseDamage = 1;
+                                    event.baseDamage++;
+                                    game.log(event.card, '的伤害值基数+1');
+                                }
+                                if (!bool || get.cardtag(card, 'yingbian_add')) {
+                                    event.yingbian_addTarget = true;
+                                }
+                            },
+                            "yingbian_tags": ["hit", "damage", "add"],
+                            filterTarget: function (card, player, target) { return player != target },
+                            content: function () {
+                                "step 0"
+                                if (typeof event.shanRequired != 'number' || !event.shanRequired || event.shanRequired < 0) {
+                                    event.shanRequired = 1;
+                                }
+                                if (typeof event.baseDamage != 'number') event.baseDamage = 1;
+                                if (typeof event.extraDamage != 'number') event.extraDamage = 0;
+                                "step 1"
+                                if (event.directHit || event.directHit2 || (!_status.connectMode && lib.config.skip_shan && !target.hasShan())) {
+                                    event._result = { bool: false };
+                                }
+                                else if (event.skipShan) {
+                                    event._result = { bool: true, result: 'shaned' };
+                                }
+                                else {
+                                    var next = target.chooseToUse('请使用一张闪响应杀');
+                                    next.set('type', 'respondShan');
+                                    next.set('filterCard', function (card, player) {
+                                        if (get.name(card) != 'shan') return false;
+                                        return lib.filter.cardEnabled(card, player, 'forceEnable');
+                                    });
+                                    if (event.shanRequired > 1) {
+                                        next.set('prompt2', '（共需使用' + event.shanRequired + '张闪）');
+                                    }
+                                    else if (event.card.nature == 'stab') {
+                                        next.set('prompt2', '（在此之后仍需弃置一张手牌）');
+                                    }
+                                    next.set('ai1', function (card) {
+                                        var target = _status.event.player;
+                                        var evt = _status.event.getParent();
+                                        var bool = true;
+                                        if (_status.event.shanRequired > 1 && !get.is.object(card) && target.countCards('h', 'shan') < _status.event.shanRequired) {
+                                            bool = false;
+                                        }
+                                        else if (target.hasSkillTag('useShan')) {
+                                            bool = true;
+                                        }
+                                        else if (target.hasSkillTag('noShan')) {
+                                            bool = false;
+                                        }
+                                        else if (get.damageEffect(target, evt.player, target, evt.card.nature) >= 0) bool = false;
+                                        if (bool) {
+                                            return get.order(card);
+                                        }
+                                        return 0;
+                                    }).set('shanRequired', event.shanRequired);
+                                    next.set('respondTo', [player, card]);
+                                    //next.autochoose=lib.filter.autoRespondShan;
+                                }
+                                "step 2"
+                                if (!result || !result.bool || !result.result || result.result != 'shaned') {
+                                    event.trigger('shaHit');
+                                }
+                                else {
+                                    event.shanRequired--;
+                                    if (event.shanRequired > 0) {
+                                        event.goto(1);
+                                    }
+                                    else if (event.card.nature == 'stab' && target.countCards('h') > 0) {
+                                        event.responded = result;
+                                        event.goto(4);
+                                    }
+                                    else {
+                                        event.trigger('shaMiss');
+                                        event.responded = result;
+                                    }
+                                }
+                                "step 3"
+                                if ((!result || !result.bool || !result.result || result.result != 'shaned') && !event.unhurt) {
+                                    target.damage(get.nature(event.card), event.baseDamage + event.extraDamage);
+                                    event.result = { bool: true }
+                                    event.trigger('shaDamage');
+                                }
+                                else {
+                                    event.result = { bool: false }
+                                    event.trigger('shaUnhirt');
+                                }
+                                event.finish();
+                                "step 4"
+                                target.chooseToDiscard('刺杀：请弃置一张牌，否则此【杀】依然造成伤害').set('ai', function (card) {
+                                    var target = _status.event.player;
+                                    var evt = _status.event.getParent();
+                                    var bool = true;
+                                    if (get.damageEffect(target, evt.player, target, evt.card.nature) >= 0) bool = false;
+                                    if (bool) {
+                                        return 8 - get.useful(card);
+                                    }
+                                    return 0;
+                                });
+                                "step 5"
+                                if ((!result || !result.bool) && !event.unhurt) {
+                                    target.damage(get.nature(event.card), event.baseDamage + event.extraDamage);
+                                    event.result = { bool: true }
+                                    event.trigger('shaDamage');
+                                    event.finish();
+                                }
+                                else {
+                                    event.trigger('shaMiss');
+                                }
+                                "step 6"
+                                if ((!result || !result.bool) && !event.unhurt) {
+                                    target.damage(get.nature(event.card), event.baseDamage + event.extraDamage);
+                                    event.result = { bool: true }
+                                    event.trigger('shaDamage');
+                                    event.finish();
+                                }
+                                else {
+                                    event.result = { bool: false }
+                                    event.trigger('shaUnhirt');
+                                }
+                            },
+                            ai: {
+                                yingbian: function (card, player, targets, viewer) {
+                                    if (get.attitude(viewer, player) <= 0) return 0;
+                                    var base = 0, hit = false;
+                                    if (get.cardtag(card, 'yingbian_hit')) {
+                                        hit = true;
+                                        if (targets.filter(function (target) {
+                                            return target.hasShan() && get.attitude(viewer, target) < 0 && get.damageEffect(target, player, viewer, get.nature(card)) > 0;
+                                        })) base += 5;
+                                    }
+                                    if (get.cardtag(card, 'yingbian_all')) {
+                                        if (game.hasPlayer(function (current) {
+                                            return !targets.contains(current) && lib.filter.targetEnabled2(card, player, current) && get.effect(current, card, player, player) > 0;
+                                        })) base += 5;
+                                    }
+                                    if (get.cardtag(card, 'yingbian_damage')) {
+                                        if (targets.filter(function (target) {
+                                            return get.attitude(player, target) < 0 && (hit || !target.mayHaveShan() || player.hasSkillTag('directHit_ai', true, {
+                                                target: target,
+                                                card: card,
+                                            }, true)) && !target.hasSkillTag('filterDamage', null, {
+                                                player: player,
+                                                card: card,
+                                                jiu: true,
+                                            })
+                                        })) base += 5;
+                                    }
+                                    return base;
+                                },
+                                canLink: function (player, target, card) {
+                                    if (!target.isLinked() && !player.hasSkill('wutiesuolian_skill')) return false;
+                                    if (target.mayHaveShan() && !player.hasSkillTag('directHit_ai', true, {
+                                        target: target,
+                                        card: card,
+                                    }, true)) return false;
+                                    if (player.hasSkill('jueqing') || player.hasSkill('gangzhi') || target.hasSkill('gangzhi')) return false;
+                                    return true;
+                                },
+                                basic: {
+                                    useful: [5, 3, 1],
+                                    value: [5, 3, 1],
+                                },
+                                order: function (item, player) {
+                                    if (player.hasSkillTag('presha', true, null, true)) return 10;
+                                    if (lib.linked.contains(get.nature(item))) {
+                                        if (game.hasPlayer(function (current) {
+                                            return current != player && current.isLinked() && player.canUse(item, current, null, true) && get.effect(current, item, player, player) > 0 && lib.card.sha.ai.canLink(player, current, item);
+                                        }) && game.countPlayer(function (current) {
+                                            return current.isLinked() && get.damageEffect(current, player, player, get.nature(item)) > 0;
+                                        }) > 1) return 3.1;
+                                        return 3;
+                                    }
+                                    return 3.05;
+                                },
+                                result: {
+                                    target: function (player, target, card, isLink) {
+                                        var eff = function () {
+                                            if (!isLink && player.hasSkill('jiu')) {
+                                                if (!target.hasSkillTag('filterDamage', null, {
+                                                    player: player,
+                                                    card: card,
+                                                    jiu: true,
+                                                })) {
+                                                    if (get.attitude(player, target) > 0) {
+                                                        return -7;
+                                                    }
+                                                    else {
+                                                        return -4;
+                                                    }
+                                                }
+                                                return -0.5;
+                                            }
+                                            return -1.5;
+                                        }();
+                                        if (!isLink && target.mayHaveShan() && !player.hasSkillTag('directHit_ai', true, {
+                                            target: target,
+                                            card: card,
+                                        }, true)) return eff / 1.2;
+                                        return eff;
+                                    },
+                                },
+                                tag: {
+                                    respond: 1,
+                                    respondShan: 1,
+                                    damage: function (card) {
+                                        if (card.nature == 'poison') return;
+                                        return 1;
+                                    },
+                                    natureDamage: function (card) {
+                                        if (card.nature) return 1;
+                                    },
+                                    fireDamage: function (card, nature) {
+                                        if (card.nature == 'fire') return 1;
+                                    },
+                                    thunderDamage: function (card, nature) {
+                                        if (card.nature == 'thunder') return 1;
+                                    },
+                                    poisonDamage: function (card, nature) {
+                                        if (card.nature == 'poison') return 1;
+                                    },
+                                },
+                            },
+                            fullskin: true,
+                        },
+                        "huibi9": {
+                            global: ["shashanwuxietao"],
+                            image: 'ext:舰R战术/image/huibi9.png',
+                            audio: true,
+                            fullskin: true,
+                            type: "basic",
+                            autoViewAs: "shan",
+                            cardcolor: "red",
+                            notarget: true,
+                            nodelay: true,
+                            "yingbian_prompt": function (card) {
+                                var str = '';
+                                if (get.cardtag(card, 'yingbian_gain')) {
+                                    str += '当你声明使用此牌时，你获得此牌响应的目标牌';
+                                }
+                                if (!str.length || get.cardtag(card, 'yingbian_draw')) {
+                                    if (str.length) str += '；';
+                                    str += '当你声明使用此牌时，你摸一张牌';
+                                }
+                                return str;
+                            },
+                            "yingbian_tags": ["gain", "draw"],
+                            yingbian: function (event) {
+                                var bool = false;
+                                if (get.cardtag(event.card, 'yingbian_damage')) {
+                                    bool = true;
+                                    var cardx = event.respondTo;
+                                    if (cardx && cardx[1] && cardx[1].cards && cardx[1].cards.filterInD('od').length) player.gain(cardx[1].cards.filterInD('od'), 'gain2', 'log');
+                                }
+                                if (!bool || get.cardtag(event.card, 'yingbian_draw')) event.player.draw();
+                            },
+                            content: function () {
+                                event.result = 'shaned';
+                                event.getParent().delayx = false;
+                                game.delay(0.5);
+                            },
+                            ai: {
+                                order: 3,
+                                respondshan: 1,
+                                basic: {
+                                    useful: [7, 5.1, 2],
+                                    value: [7, 5.1, 2],
+                                },
+                                result: {
+                                    player: 1,
+                                },
+                            },
+                        },
+                        "zziqi9": {
+                            image: 'ext:舰R战术/image/zziqi9.png',
+                            audio: true,
+                            fullskin: true,
+                            type: "basic",
+                            toself: true,
+                            enable: function (event, player) {
+                                //return !player.hasSkill('jiu');
+                                return true;
+                            },
+                            lianheng: true,
+                            logv: false,
+                            savable: function (card, player, dying) {
+                                return dying == player || player.hasSkillTag('jiuOther', null, dying, true);
+                            },
+                            usable: 1,
+                            selectTarget: -1,
+                            modTarget: true,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            content: function () {
+                                if (typeof event.baseDamage != 'number') event.baseDamage = 1;
+                                if (target.isDying() || event.getParent(2).type == 'dying') {
+                                    target.recover(event.baseDamage);
+                                    if (_status.currentPhase == target) {
+                                        target.getStat().card.jiu--;
+                                    }
+                                }
+                                else {
+                                    game.addVideo('jiuNode', target, true);
+                                    if (cards && cards.length) {
+                                        card = cards[0];
+                                    }
+                                    if (!target.storage.jiu) target.storage.jiu = 0;
+                                    target.storage.jiu += event.baseDamage;
+                                    game.broadcastAll(function (target, card, gain2) {
+                                        target.addSkill('jiu');
+                                        if (!target.node.jiu && lib.config.jiu_effect) {
+                                            target.node.jiu = ui.create.div('.playerjiu', target.node.avatar);
+                                            target.node.jiu2 = ui.create.div('.playerjiu', target.node.avatar2);
+                                        }
+                                        if (gain2 && card.clone && (card.clone.parentNode == target.parentNode || card.clone.parentNode == ui.arena)) {
+                                            card.clone.moveDelete(target);
+                                        }
+                                    }, target, card, target == targets[0] && cards.length == 1);
+                                    if (target == targets[0] && cards.length == 1) {
+                                        if (card.clone && (card.clone.parentNode == target.parentNode || card.clone.parentNode == ui.arena)) {
+                                            game.addVideo('gain2', target, get.cardsInfo([card]));
+                                        }
+                                    }
+                                }
+                            },
+                            ai: {
+                                basic: {
+                                    useful: function (card, i) {
+                                        if (_status.event.player.hp > 1) {
+                                            if (i == 0) return 4;
+                                            return 1;
+                                        }
+                                        if (i == 0) return 7.3;
+                                        return 3;
+                                    },
+                                    value: function (card, player, i) {
+                                        if (player.hp > 1) {
+                                            if (i == 0) return 5;
+                                            return 1;
+                                        }
+                                        if (i == 0) return 7.3;
+                                        return 3;
+                                    },
+                                },
+                                order: function () {
+                                    return get.order({ name: 'sha' }) + 0.2;
+                                },
+                                result: {
+                                    target: function (player, target) {
+                                        if (target && target.isDying()) return 2;
+                                        if (target && !target.isPhaseUsing()) return 0;
+                                        if (lib.config.mode == 'stone' && !player.isMin()) {
+                                            if (player.getActCount() + 1 >= player.actcount) return 0;
+                                        }
+                                        var shas = player.getCards('h', 'sha');
+                                        if (shas.length > 1 && (player.getCardUsable('sha') > 1 || player.countCards('h', 'zhuge'))) {
+                                            return 0;
+                                        }
+                                        shas.sort(function (a, b) {
+                                            return get.order(b) - get.order(a);
+                                        })
+                                        var card;
+                                        if (shas.length) {
+                                            for (var i = 0; i < shas.length; i++) {
+                                                if (lib.filter.filterCard(shas[i], target)) {
+                                                    card = shas[i]; break;
+                                                }
+                                            }
+                                        }
+                                        else if (player.hasSha() && player.needsToDiscard()) {
+                                            if (player.countCards('h', 'hufu') != 1) {
+                                                card = { name: 'sha' };
+                                            }
+                                        }
+                                        if (card) {
+                                            if (game.hasPlayer(function (current) {
+                                                return (get.attitude(target, current) < 0 &&
+                                                    target.canUse(card, current, null, true) &&
+                                                    !current.hasSkillTag('filterDamage', null, {
+                                                        player: player,
+                                                        card: card,
+                                                        jiu: true,
+                                                    }) &&
+                                                    get.effect(current, card, target) > 0);
+                                            })) {
+                                                return 1;
+                                            }
+                                        }
+                                        return 0;
+                                    },
+                                },
+                                tag: {
+                                    save: 1,
+                                    recover: 0.1,
+                                },
+                            },
+                        },
+                        "kuaixiu9": {
+                            image: 'ext:舰R战术/image/kuaixiu9.png',
+                            fullskin: true,
+                            type: "basic",
+                            autoViewAs: "tao",
+                            cardcolor: "red",
+                            toself: true,
+                            enable: function (card, player) {
+                                return player.hp < player.maxHp;
+                            },
+                            savable: true,
+                            selectTarget: -1,
+                            filterTarget: function (card, player, target) {
+                                return target == player && target.hp < target.maxHp;
+                            },
+                            modTarget: function (card, player, target) {
+                                return target.hp < target.maxHp;
+                            },
+                            content: function () {
+                                target.recover(event.baseDamage || 1);
+                            },
+                            ai: {
+                                basic: {
+                                    order: function (card, player) {
+                                        if (player.hasSkillTag('pretao')) return 5;
+                                        return 2;
+                                    },
+                                    useful: [6.5, 4, 3, 2],
+                                    value: [6.5, 4, 3, 2],
+                                },
+                                result: {
+                                    target: 2,
+                                    "target_use": function (player, target) {
+                                        var numt = player.countCards('hs', 'tao');
+                                        var tri = _status.event.getTrigger();
+                                        var numz = game.countPlayer(function (current) {
+                                            return current.identity == 'zhong' || current.identity == 'mingzhong';
+                                        });
+                                        var numf = game.countPlayer(function (current) {
+                                            return current.identity == 'fan';
+                                        });
+                                        if (_status.mode == "normal" && tri && tri.name == 'dying') {
+                                            if (player.identity == 'zhu') {
+                                                if (target.identity == 'zhong' || target.identity == 'mingzhong') {
+                                                    if ((numt + target.hp) > 0 && player.hp >= 2) {
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                }
+                                                if (target.identity == 'nei' && numf >= 3 && player.hp >= 2 && target.hasSkill('AIkaiguan_tz')) {
+                                                    if ((numt + target.hp) > 0) {
+                                                        return 1;
+                                                    } else {
+                                                        if (player.hp < 2) {
+                                                            return 0;
+                                                        }
+                                                    }
+                                                }
+                                                if (target.identity == 'fan') {
+                                                    return 0;
+                                                }
+                                            }
+                                            if (player.identity == 'zhong') {
+                                                if (target != player && (target.identity == 'zhong' || target.identity == 'mingzhong')) {
+                                                    if ((numt + target.hp) > 0) {
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                }
+                                                if (target.identity == 'zhong' && target == player) {
+                                                    return 1;
+                                                }
+                                                if (target.identity == 'zhu') {
+                                                    return 1;
+                                                }
+                                                if (target.identity == 'nei' && numf >= 3 && numz <= 1 && target.hasSkill('AIkaiguan_tz')) {
+                                                    if ((numt + target.hp) > 0 && player.hp >= 2) {
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                }
+                                                if (target.identity == 'fan') {
+                                                    return 0;
+                                                }
+                                            }
+                                            if (player.identity == 'nei' && (player.hasSkill('AIkaiguan_tz') || player.hasSkill('AIkaiguan_tf'))) {
+                                                if (target.identity == 'zhu') {
+                                                    return 1;
+                                                }
+                                                if (player.hasSkill('AIkaiguan_tz') && (target.identity == 'zhong' || target.identity == 'mingzhong')) {
+                                                    if ((numt + target.hp) > 0 && player.hp >= 2 && numf >= 3 && numz <= 1) {
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                }
+                                                if (player.hasSkill('AIkaiguan_tf') && target.identity == 'fan' && tri.source && tri.source != player) {
+                                                    if ((numt + target.hp) > 0 && player.hp >= 2 && numf <= 1 && numz >= 2) {
+                                                        return 1;
+                                                    } else {
+                                                        return 0;
+                                                    }
+                                                }
+                                            }
+                                            if (player.identity == 'fan') {
+                                                if (target.identity == 'fan' && tri.source && tri.source.identity == 'fan') {
+                                                    if (target.countCards('h') >= 3 && (numt + target.hp) > 0) {
+                                                        return 1;
+                                                    } else {
+                                                        if (target.countCards('h') < 3 && (numt + target.hp) <= 0) {
+                                                            return 0;
+                                                        }
+                                                    }
+                                                }
+                                                if (target.identity == 'fan' && tri.source && tri.source.identity != 'fan') {
+                                                    if (target == player) {
+                                                        return 1;
+                                                    } else {
+                                                        if (target != player) {
+                                                            if ((numt + target.hp) > 0) {
+                                                                return 1;
+                                                            } else {
+                                                                if ((numt + target.hp) <= 0) {
+                                                                    return 0;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                if (target.identity == 'fan' && !tri.source) {
+                                                    if (target == player) {
+                                                        return 1;
+                                                    } else {
+                                                        if (target != player) {
+                                                            if ((numt + target.hp) > 0) {
+                                                                return 1;
+                                                            } else {
+                                                                if ((numt + target.hp) <= 0) {
+                                                                    return 0;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                if (target.identity == 'nei' && numf <= 1 && numz >= 2 && target.hasSkill('AIkaiguan_tf')) {
+                                                    if ((numt + target.hp) > 0 && player.hp >= 2) {
+                                                        return 1;
+                                                    }
+                                                }
+                                                if (target.identity == 'zhu' || target.identity == 'zhong') {
+                                                    return 0;
+                                                }
+                                            }
+                                        }
+                                        if (tri && tri.name == 'dying' && get.mode() != 'identity' && get.attitude(player, target) > 0) {
+                                            if ((numt + target.hp) > 0) {
+                                                return 1;
+                                            } else {
+                                                if ((numt + target.hp) <= 0) {
+                                                    return 0;
+                                                }
+                                            }
+                                        }
+                                        if (tri && tri.name == 'dying') {
+                                            if (target.hasSkill('spshanxi_bj') && target.countCards('he') < 2) {
+                                                return 0;
+                                            }
+                                        }
+                                        // if(player==target&&player.hp<=0) return 2;
+                                        if (player.hasSkillTag('nokeep', true, null, true)) return 2;
+                                        var nd = player.needsToDiscard();
+                                        var keep = false;
+                                        if (nd <= 0) {
+                                            keep = true;
+                                        }
+                                        else if (nd == 1 && target.hp >= 2 && target.countCards('h', 'tao') <= 1) {
+                                            keep = true;
+                                        }
+                                        var mode = get.mode();
+                                        if (target.hp >= 2 && keep && target.hasFriend()) {
+                                            if (target.hp > 2 || nd == 0) return 0;
+                                            if (target.hp == 2) {
+                                                if (game.hasPlayer(function (current) {
+                                                    if (target != current && get.attitude(target, current) >= 3) {
+                                                        if (current.hp <= 1) return true;
+                                                        if ((mode == 'identity' || mode == 'versus' || mode == 'chess') && current.identity == 'zhu' && current.hp <= 2) return true;
+                                                    }
+                                                })) {
+                                                    return 0;
+                                                }
+                                            }
+                                        }
+                                        var att = get.attitude(player, target);
+                                        if (att < 3 && att >= 0 && player != target) return 0;
+                                        if (mode == 'identity' && player.identity == 'fan' && target.identity == 'fan') {
+                                            if (tri && tri.name == 'dying' && tri.source && tri.source.identity == 'fan' && tri.source != target) {
+                                                var num = game.countPlayer(function (current) {
+                                                    if (current.identity == 'fan') {
+                                                        return current.countCards('h', 'tao');
+                                                    }
+                                                });
+                                                if (num > 1 && player == target) return 2;
+                                                return 0;
+                                            }
+                                        }
+                                        if (mode == 'identity' && player.identity == 'zhu' && target.identity == 'nei') {
+                                            if (tri && tri.name == 'dying' && tri.source && tri.source.identity == 'zhong') {
+                                                return 0;
+                                            }
+                                        }
+                                        if (mode == 'stone' && target.isMin() &&
+                                            player != target && tri && tri.name == 'dying' && player.side == target.side &&
+                                            tri.source != target.getEnemy()) {
+                                            return 0;
+                                        }
+                                        return 2;
+                                    },
+                                },
+                                tag: {
+                                    recover: 1,
+                                    save: 1,
+                                },
+                            },
+                        },
+                        "zhikongquan9": {
+                            global: ["shashanwuxietao"],
+                            image: 'ext:舰R战术/image/zhikongquan9.png',
+                            autoViewAs: "wuxie",
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            ai: {
+                                tag: {
+                                    respond: 1,
+                                    respondwuxie: 1,
+
+                                },
+
+                                basic: {
+                                    useful: [6, 4, 3],
+                                    value: [6, 4, 3],
+                                },
+                                result: {
+                                    player: 1,
+                                },
+                                expose: 0.2,
+                            },
+                            notarget: true,
+                            "yingbian_tags": ["gain", "draw"],
+                            "yingbian_prompt": function (card) {
+                                if (!get.cardtag(card, 'yingbian_gain')) return '当你声明使用此牌时，你摸一张牌';
+                                return '当此牌生效后，你获得此牌响应的目标牌';
+                            },
+                            yingbian: function (event) {
+                                if (!get.cardtag(event.card, 'yingbian_gain') || get.cardtag(event.card, 'yingbian_draw')) event.player.draw();
+                            },
+                            contentBefore: function () {
+                                'step 0'
+                                if (get.mode() == 'guozhan' && get.cardtag(card, 'guo')) {
+                                    var trigger = event.getParent(2);
+                                    if (trigger.triggername != 'phaseJudge' && !trigger.statecard && trigger.target.identity != 'ye' && trigger.target.identity != 'unknown') {
+                                        player.chooseControl('对单体使用', '对势力使用').set('prompt', '请选择' + get.translation(card) + '的使用方式').set('ai', function () {
+                                            return '对势力使用'
+                                        });
+                                    }
+                                    else event.finish();
+                                }
+                                else event.finish();
+                                'step 1'
+                                if (result.control == '对势力使用') {
+                                    player.chat('对势力使用');
+                                    event.getParent(2).guowuxie = true;
+                                }
+                            },
+                            content: function () {
+                                var evt = event.getParent();
+                                event.result = {
+                                    wuxied: true,
+                                    directHit: evt.directHit || [],
+                                    nowuxie: evt.nowuxie,
+                                };
+                                if (player.isOnline()) {
+                                    player.send(function (player) {
+                                        if (ui.tempnowuxie && !player.hasWuxie()) {
+                                            ui.tempnowuxie.close();
+                                            delete ui.tempnowuxie;
+                                        }
+                                    }, player);
+                                }
+                                else if (player == game.me) {
+                                    if (ui.tempnowuxie && !player.hasWuxie()) {
+                                        ui.tempnowuxie.close();
+                                        delete ui.tempnowuxie;
+                                    }
+                                }
+                                if (event.card.yingbian && get.cardtag(event.card, 'yingbian_gain')) {
+                                    var cardx = event.getParent().respondTo;
+                                    if (cardx && cardx[1] && cardx[1].cards && cardx[1].cards.filterInD('od').length) player.gain(cardx[1].cards.filterInD('od'), 'gain2', 'log');
+                                }
+                            },
+                        },
                         huhangyuanhu9: {
                             image: 'ext:舰R战术/image/huhangyuanhu9.png',
                             audio: true,
@@ -1989,8 +2734,28 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             "_priority": 0,
                         },
+                        shashanwuxietao: {
+                            prompt: "将♦牌当做杀，♥牌当做桃，♣牌当做闪，♠牌当做无懈可击使用或打出(bushi)，<br>将射击当做杀，快修当做桃，回避当做闪，制空当做无懈可击使用或打出。<br>响应事件只能打出对应名字的卡牌，<br>想打出让其他牌响应事件，需要视为技的帮助",
+                            mod: {
+                                cardname: function (card, player, name) {
+                                    if (card.name == 'sheji9') { return 'sha'; }; if (card.name == 'huibi9') { return 'shan'; }; if (card.name == 'zhikongquan9') { return 'wuxie'; }; if (card.name == 'kuaixiu9') { return 'tao'; }; if (card.name == 'zziqi9') { return 'jiu'; };
+                                    if (card.name == 'juedouba9') { return 'juedou'; };
+                                    if (card.name == 'leibusigang9') { return 'lebu'; }; if (card.name == 'nobuji9') { return 'bingliang'; };
+                                },
+                            },
+                        },
                     },
                     translate: {
+                        "sheji9": "射击",
+                        "sheji9_info": "出牌阶段，对你攻击范围内的一名角色使用。其须使用一张【闪】，否则你对其造成1点伤害。",
+                        "huibi9": "回避",
+                        "huibi9_info": "抵消一张【射击】",
+                        "kuaixiu9": "快修",
+                        "kuaixiu9_info": "出牌阶段，对自己使用，回复一点体力。",
+                        "zziqi9": "z字旗",
+                        "zziqi9_info": "出牌阶段，对自己使用，令自己的下一张使用的【射击】造成的伤害+1（每回合限使用1次）；濒死阶段，对自己使用，回复1点体力",
+                        "zhikongquan9": "制空权",
+                        "zhikongquan9_info": "一张锦囊牌生效前，对此牌使用。抵消此牌对一名角色产生的效果，或抵消另一张【无懈可击】产生的效果。",
                         "huhangyuanhu9": "护航援护",
                         "huhangyuanhu9_info": "出牌阶段，对一名其他角色使用。其摸两张牌。",
                         "paojixunlian9": "炮击训练",
@@ -2056,61 +2821,168 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "fangkongdanmu9_info": "你视为拥有防空，若你已有防空则是为拥有对空防御。",
                         "leijishulian9": "雷击熟练",
                         "leijishulian9_info": "出牌阶段，弃置1张手牌对一名角色使用。目标角色须弃置一张与你弃置牌相同花色的手牌，否则雷击熟练对该角色造成1点雷属性伤害。",
+                        "shashanwuxietao": "卡牌兼容",
+                        "shashanwuxietao_info": "杀闪桃无懈，无名杀的卡牌不容易互换，需要技能龙魂的帮助",
                     },
                     list: [
-                        ["heart", 10, "huhangyuanhu9"],
-                        ["heart", 11, "huhangyuanhu9"],
-                        ["heart", 12, "huhangyuanhu9"],
-                        ["club", 10, "paojixunlian9"],
-                        ["club", 11, "paojixunlian9"],
-                        ["club", 12, "paojixunlian9"],
-                        ["spade", 1, "yuanchengdaodan9"],
-                        ["spade", 3, "yuanchengdaodan9"],
-                        ["spade", 4, "yuanchengdaodan9"],
-                        ["club", 3, "ganraodan9"],
-                        ["club", 4, "ganraodan9"],
-                        ["club", 5, "ganraodan9"],
-                        ["diamond", 3, "ganraodan9"],
+                        ["heart", 1, "quanjiabantuji9"],
+                        ["heart", 2, "ganraodan9"],
+                        ["heart", 3, "kuaixiu9"],
+                        ["heart", 4, "kuaixiu9"],
+                        ["heart", 5, "chuanjiahangdan9"],
+                        ["heart", 6, "kuaixiu9"],
+                        ["heart", 7, "huhangyuanhu9"],
+                        ["heart", 8, "huhangyuanhu9"],
+                        ["heart", 9, "qianshaoyuanhu9"],
+                        ["heart", 10, "sheji9"],
+                        ["heart", 11, "qianshaoyuanhu9"],
+                        ["heart", 12, "bianduiyuanhu9"],
+                        ["heart", 13, "huibi9"],
+                        ["heart", 1, "zhikongquan9"],
+                        ["heart", 2, "yuanchengdaodan9"],
+                        ["heart", 3, "yuanchengdaodan9"],
+                        ["heart", 4, "sheji9"],
+                        ["heart", 5, "kuaixiu9"],
+                        ["heart", 6, "kuaixiu9"],
+                        ["heart", 7, "sheji9", "fire"],
+                        ["heart", 8, "ganraodan9"],
+                        ["heart", 9, "ganraodan9"],
+                        ["heart", 10, "sheji9", "fire"],
+                        ["heart", 11, "huibi9"],
+                        ["heart", 12, "huibi9"],
+                        ["heart", 13, "zhikongquan9"],
+                        ["diamond", 1, "gailiangbeimaodan9"],
+                        ["diamond", 2, "huibi9"],
+                        ["diamond", 3, "zhaomingdanjiaozheng9"],
                         ["diamond", 4, "ganraodan9"],
-                        ["diamond", 5, "ganraodan9"],
+                        ["diamond", 5, "tanzhaodeng9"],
                         ["diamond", 6, "ganraodan9"],
-                        ["club", 8, "yanhangleiji9"],
-                        ["club", 9, "yanhangleiji9"],
-                        ["spade", 10, "yanhangleiji9"],
-                        ["spade", 11, "yanhangleiji9"],
-                        ["diamond", 2, "tanzhaodeng9"],
-                        ["spade", 2, "jiaohusheji9"],
-                        ["spade", 1, "yingbeimao9"],
-                        ["heart", 2, "guochuan9"],
-                        ["heart", 7, "qianshaoyuanhu9"],
-                        ["diamond", 7, "qianshaoyuanhu9"],
-                        ["diamond", 9, "qianshaoyuanhu9"],
-                        ["club", 7, "shujujiaohu9"],
-                        ["spade", 7, "shujujiaohu9"],
-                        ["spade", 9, "shujujiaohu9"],
-                        ["spade", 11, "yinghuazhuangjia9"],
-                        ["spade", 13, "yinghuazhuangjia9"],
-                        ["heart", 1, "bianduiyuanhu9"],
-                        ["heart", 13, "bianduiyuanhu9"],
-                        ["club", 13, "tantiaogongji9"],
-                        ["diamond", 4, "lanzusheji9"],
-                        ["club", 8, "duihaijingjieshao9"],
-                        ["club", 6, "zhaomingdanjiaozheng9"],
-                        ["club", 2, "gailiangbeimaodan9"],
-                        ["diamond", 1, "chuanjialiudan9"],
-                        ["heart", 3, "chuanjiahangdan9"],
-                        ["heart", 6, "zhuangjiajiaban9"],
-                        ["heart", 8, "quanjiabantuji9"],
-                        ["heart", 9, "quanjiabantuji9"],
-                        ["spade", 5, "duikongyujing9"],
-                        ["spade", 6, "duikongyujing9"],
-                        ["spade", 8, "duikongyujing9"],
-                        ["diamond", 10, "fangkongdanmu9"],
-                        ["diamond", 11, "fangkongdanmu9"],
+                        ["diamond", 7, "huibi9"],
+                        ["diamond", 8, "huibi9"],
+                        ["diamond", 9, "sheji9"],
+                        ["diamond", 10, "sheji9"],
+                        ["diamond", 11, "huibi9"],
                         ["diamond", 12, "fangkongdanmu9"],
-                        ["diamond", 6, "leijishulian9"],
-                        ["club", 5, "leijishulian9", "thunder"],
-                        ["club", 6, "leijishulian9", "thunder"],
+                        ["diamond", 13, "sheji9"],
+                        ["diamond", 1, "chuanjialiudan9"],
+                        ["diamond", 2, "bianduiyuanhu9"],
+                        ["diamond", 3, "kuaixiu9"],
+                        ["diamond", 4, "sheji9", "fire"],
+                        ["diamond", 5, "sheji9"],
+                        ["diamond", 6, "huhangyuanhu9"],
+                        ["diamond", 7, "huhangyuanhu9"],
+                        ["diamond", 8, "huibi9"],
+                        ["diamond", 9, "zziqi9"],
+                        ["diamond", 10, "huibi9"],
+                        ["diamond", 11, "huibi9"],
+                        ["diamond", 12, "yuanchengdaodan9"],
+                        ["diamond", 13, "qianshaoyuanhu9"],
+                        ["club", 1, "tantiaogongji9"],
+                        ["club", 2, "guochuan9"],
+                        ["club", 3, "sheji9"],
+                        ["club", 4, "sheji9"],
+                        ["club", 5, "duikongyujing9"],
+                        ["club", 6, "fangkongdanmu9"],
+                        ["club", 7, "fangkongdanmu9"],
+                        ["club", 8, "sheji9"],
+                        ["club", 9, "sheji9"],
+                        ["club", 10, "sheji9"],
+                        ["club", 11, "sheji9"],
+                        ["club", 12, "zhikongquan9"],
+                        ["club", 13, "zhikongquan9"],
+                        ["club", 1, "duihaijingjieshao9"],
+                        ["club", 2, "guochuan9"],
+                        ["club", 3, "sheji9"],
+                        ["club", 4, "yanhangleiji9"],
+                        ["club", 5, "sheji9"],
+                        ["club", 6, "sheji9", "thunder"],
+                        ["club", 7, "sheji9", "thunder"],
+                        ["club", 8, "sheji9"],
+                        ["club", 9, "zziqi9"],
+                        ["club", 10, "shujujiaohu9"],
+                        ["club", 11, "leijishulian9"],
+                        ["club", 12, "leijishulian9"],
+                        ["club", 13, "leijishulian9"],
+                        ["spade", 1, "quanjiabantuji9"],
+                        ["spade", 2, "zhuangjiajiaban9"],
+                        ["spade", 3, "shujujiaohu9"],
+                        ["spade", 4, "fangkongdanmu9"],
+                        ["spade", 5, "lanzusheji9"],
+                        ["spade", 6, "paojixunlian9"],
+                        ["spade", 7, "paojixunlian9"],
+                        ["spade", 8, "sheji9"],
+                        ["spade", 9, "sheji9"],
+                        ["spade", 10, "sheji9"],
+                        ["spade", 11, "zhikongquan9"],
+                        ["spade", 12, "paojixunlian9"],
+                        ["spade", 13, "yanhangleiji9"],
+                        ["spade", 1, "yingbeimao9"],
+                        ["spade", 2, "jiaohusheji9"],
+                        ["spade", 3, "zziqi9"],
+                        ["spade", 4, "sheji9", "thunder"],
+                        ["spade", 5, "sheji9", "thunder"],
+                        ["spade", 6, "sheji9", "thunder"],
+                        ["spade", 7, "sheji9"],
+                        ["spade", 8, "sheji9"],
+                        ["spade", 9, "zziqi9"],
+                        ["spade", 10, "yanhangleiji9"],
+                        ["spade", 11, "yinghuazhuangjia9"],
+                        ["spade", 12, "yinghuazhuangjia9"],
+                        ["spade", 13, "zhikongquan9"],
+                        /*  ["heart", 10, "huhangyuanhu9"],
+                         ["heart", 11, "huhangyuanhu9"],
+                         ["heart", 12, "huhangyuanhu9"],
+                         ["club", 10, "paojixunlian9"],
+                         ["club", 11, "paojixunlian9"],
+                         ["club", 12, "paojixunlian9"],
+                         ["spade", 1, "yuanchengdaodan9"],
+                         ["spade", 3, "yuanchengdaodan9"],
+                         ["spade", 4, "yuanchengdaodan9"],
+                         ["club", 3, "ganraodan9"],
+                         ["club", 4, "ganraodan9"],
+                         ["club", 5, "ganraodan9"],
+                         ["diamond", 3, "ganraodan9"],
+                         ["diamond", 4, "ganraodan9"],
+                         ["diamond", 5, "ganraodan9"],
+                         ["diamond", 6, "ganraodan9"],
+                         ["club", 8, "yanhangleiji9"],
+                         ["club", 9, "yanhangleiji9"],
+                         ["spade", 10, "yanhangleiji9"],
+                         ["spade", 11, "yanhangleiji9"],
+                         ["diamond", 2, "tanzhaodeng9"],
+                         ["spade", 2, "jiaohusheji9"],
+                         ["spade", 1, "yingbeimao9"],
+                         ["heart", 2, "guochuan9"],
+                         ["heart", 7, "qianshaoyuanhu9"],
+                         ["diamond", 7, "qianshaoyuanhu9"],
+                         ["diamond", 9, "qianshaoyuanhu9"],
+                         ["club", 7, "shujujiaohu9"],
+                         ["spade", 7, "shujujiaohu9"],
+                         ["spade", 9, "shujujiaohu9"],
+                         ["spade", 11, "yinghuazhuangjia9"],
+                         ["spade", 13, "yinghuazhuangjia9"],
+                         ["heart", 1, "bianduiyuanhu9"],
+                         ["heart", 13, "bianduiyuanhu9"],
+                         ["club", 13, "tantiaogongji9"],
+                         ["diamond", 4, "lanzusheji9"],
+                         ["club", 8, "duihaijingjieshao9"],
+                         ["club", 6, "zhaomingdanjiaozheng9"],
+                         ["club", 2, "gailiangbeimaodan9"],
+                         ["diamond", 1, "chuanjialiudan9"],
+                         ["heart", 3, "chuanjiahangdan9"],
+                         ["heart", 6, "zhuangjiajiaban9"],
+                         ["heart", 8, "quanjiabantuji9"],
+                         ["heart", 9, "quanjiabantuji9"],
+                         ["spade", 5, "duikongyujing9"],
+                         ["spade", 6, "duikongyujing9"],
+                         ["spade", 8, "duikongyujing9"],
+                         ["diamond", 10, "fangkongdanmu9"],
+                         ["diamond", 11, "fangkongdanmu9"],
+                         ["diamond", 12, "fangkongdanmu9"],
+                         ["diamond", 6, "leijishulian9"],
+                         ["club", 5, "leijishulian9", "thunder"],
+                         ["club", 6, "leijishulian9", "thunder"], */
+
                     ],//牌堆添加
                 };
 
