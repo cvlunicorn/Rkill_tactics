@@ -1249,7 +1249,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             skills: ["jiaohusheji9_skill"],
                             ai: {
                                 basic: {
-                                    equipValue: 7.5,
+                                    equipValue: 6.5,
                                     order: (card, player) => {
                                         const equipValue = get.equipValue(card, player) / 20;
                                         return player && player.hasSkillTag("reverseEquip") ? 8.5 - equipValue : 8 + equipValue;
@@ -2284,14 +2284,27 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             check(event, player) {
                                 return get.attitude(player, event.source) <= 0;
                             },
-                            logTarget: "source",
+                            direct: true,
                             content(event, trigger, player) {
                                 var card = {
                                     name: "sha",
                                     isCard: true,
                                 };
                                 if (player.canUse(card, trigger.source, false)) {
-                                    player.useCard(card, trigger.source, false);
+                                    player.chooseToUse(function (card, player, event) {
+                                        if (get.name(card) != "sha") return false;
+                                        return lib.filter.filterCard.apply(this, arguments);
+                                    }, "是否对" + get.translation(trigger.source) + "使用一张【杀】？")
+                                        .set("targetRequired", true)
+                                        .set("complexSelect", true)
+                                        .set("filterTarget", function (card, player, target) {
+                                            if (
+                                                target != _status.event.sourcex &&
+                                                !ui.selected.targets.includes(_status.event.sourcex)
+                                            )
+                                                return false;
+                                            return lib.filter.filterTarget.apply(this, arguments);
+                                        }).set("sourcex", trigger.source);
                                 }
                             },
                             ai: {
@@ -2768,7 +2781,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "tanzhaodeng9_info": "回合开始时，你选择一名角色，展示你与其的手牌。",
                         "tanzhaodeng9_skill": "探照灯",
                         "jiaohusheji9": "交互射击",
-                        "jiaohusheji9_info": "你受到伤害后，可以视为对伤害来源使用一张杀。",
+                        "jiaohusheji9_info": "你受到伤害后，可以对伤害来源使用一张杀。",
                         "jiaohusheji9_skill": "交互射击",
                         "yingbeimao9": "硬被帽",
                         "yingbeimao9_info": "你使用杀指定目标后，其使用闪后须弃置一张牌，否则此杀依然造成伤害。",
