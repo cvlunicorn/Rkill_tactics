@@ -1507,6 +1507,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 tag: {
                                     loseCard: 1,
                                     gain: 2,
+                                    damage: 1,
                                 },
                                 wuxie: function (target, card, player, viewer) {
                                     return 0;
