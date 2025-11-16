@@ -2439,18 +2439,25 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             content() {
                                 "step 0";
-                                var eff = get.effect(player, trigger.card, trigger.player, trigger.player);
-                                trigger.player.chooseControl().set('choiceList', [
-                                    '受到一点伤害',
-                                    '令' + get.translation(trigger.card) + '无效',
-                                ])
-                                    .set("ai", function () {
-                                        if (_status.event.eff > 0) {
-                                            return 0;
-                                        }
-                                        return 1;
-                                    })
-                                    .set("eff", eff);
+                                player.judge(function (card) {
+                                    if (get.suit(card) != "diamond") return 1;
+                                    return 0;
+                                });
+                                "step 0";
+                                if (result.suit != "diamond") {
+                                    var eff = get.effect(player, trigger.card, trigger.player, trigger.player);
+                                    trigger.player.chooseControl().set('choiceList', [
+                                        '受到一点伤害',
+                                        '令' + get.translation(trigger.card) + '无效',
+                                    ])
+                                        .set("ai", function () {
+                                            if (_status.event.eff > 0) {
+                                                return 0;
+                                            }
+                                            return 1;
+                                        })
+                                        .set("eff", eff);
+                                }
                                 "step 1";
                                 if (result.index == 0) {
                                     trigger.player.damage("nocard");
@@ -2798,7 +2805,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "yinghuazhuangjia9": "硬化装甲",
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
                         "lanzusheji9": "拦阻射击",
-                        "lanzusheji9_info": "出牌阶段使用，你获得：其他角色指定你为杀的目标后，其选择受到一点伤害或令此杀无效。直到你的下回合开始。",
+                        "lanzusheji9_info": "出牌阶段使用，你获得：其他角色指定你为杀的目标后，你进行判定，若判定结果不为方片，其选择受到一点伤害或令此杀无效。直到你的下回合开始。",
                         "lanzusheji9_skill": "拦阻射击",
                         "bianduiyuanhu9": "编队援护",
                         "bianduiyuanhu9_info": "有角色濒死时，你可以打出此牌，其回复一点体力，结算后你获得一点护甲。",
