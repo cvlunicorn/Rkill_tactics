@@ -1943,45 +1943,42 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             enable: true,
                             selectTarget: -1,
                             toself: true,
-                            filter: function (event, player) {
-                                return player.countCards("h") > 0;
-                            },
                             filterTarget: function (card, player, target) {
                                 return target == player;
                             },
                             modTarget: true,
                             content: function () {
                                 'step 0'
-                                player.chooseToDiscard(true, "h", player.countCards("h"));
+                                if (player.countCards("h")) {
+                                    player.discard(player.getCards("h"));
+                                }
                                 "step 1"
-                                if (result.bool) {
-                                    var list = [];
-                                    for (var i = 0; i < lib.inpile.length; i++) {
-                                        var name = lib.inpile[i];
-                                        var type = get.type(name);
-                                        //game.log(name);
-                                        if (type == 'trick') {
-                                            if (lib.filter.cardEnabled({ name: name }, player) && name != "quanjiabantuji9") {
-                                                list.push([get.translation(type), '', name]);
-                                            }
+                                var list = [];
+                                for (var i = 0; i < lib.inpile.length; i++) {
+                                    var name = lib.inpile[i];
+                                    var type = get.type(name);
+                                    //game.log(name);
+                                    if (type == 'trick') {
+                                        if (lib.filter.cardEnabled({ name: name }, player) && name != "quanjiabantuji9") {
+                                            list.push([get.translation(type), '', name]);
                                         }
                                     }
-                                    if (list == "") {
-                                        game.log('牌堆中没有符合要求的牌');
-                                        event.finish();
-                                    }
-                                    game.log(list);
-                                    player.chooseButton([
-                                        '全甲板突击',
-                                        [list, 'vcard'],
-                                    ]).set('ai', function (button) {
-                                        var card = {
-                                            name: button.link[2],
-                                        };
-                                        return (get.value(card) || 1);
+                                }
+                                if (list == "") {
+                                    game.log('牌堆中没有符合要求的牌');
+                                    event.finish();
+                                }
+                                //game.log(list);
+                                player.chooseButton([
+                                    '全甲板突击',
+                                    [list, 'vcard'],
+                                ]).set('ai', function (button) {
+                                    var card = {
+                                        name: button.link[2],
+                                    };
+                                    return (get.value(card) || 1);
 
-                                    }).set('selectButton', 1);
-                                } else { event.finish(); }
+                                }).set('selectButton', 1);
                                 'step 2'
                                 if (result && result.bool && result.links[0]) {
                                     player.chooseUseTarget(true, result.links[0][2]);
@@ -2813,7 +2810,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "zhuangjiajiaban9_info": "你受到锦囊牌伤害时可以进行判定，若判定结果为红色，此伤害-1。",
                         "zhuangjiajiaban9_skill": "装甲甲板",
                         "quanjiabantuji9": "全甲板突击",
-                        "quanjiabantuji9_info": "使用此牌后你弃置所有手牌，然后视为使用任意锦囊牌。",
+                        "quanjiabantuji9_info": "使用此牌后你弃置所有手牌（没有则不弃），然后视为使用任意锦囊牌。",
                         "duikongyujing9": "对空预警",
                         "duikongyujing9_info": "可重铸，对一名角色使用。直到其下回合开始，其使用防空结算后卜算2， 摸一张牌。",
                         "duikongyujing9_skill": "对空预警",
