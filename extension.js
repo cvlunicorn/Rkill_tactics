@@ -2170,9 +2170,131 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             selectTarget: 1,
                         },
+                        "dongli9": {
+                            image: 'ext:舰R战术/image/dongli9.png',
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip4",
+                            distance: {
+                                globalFrom: -1,
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == 'o') target.equip(cards[0]);
+                            },
+                            toself: true,
+                            ai: {
+                                basic: {
+                                    order: function (card, player) {
+                                        if (player && player.hasSkillTag('reverseEquip')) {
+                                            return 8.5 - get.equipValue(card, player) / 20;
+                                        }
+                                        else {
+                                            return 8 + get.equipValue(card, player) / 20;
+                                        }
+                                    },
+                                    useful: 2,
+                                    equipValue: 4,
+                                    value: function (card, player, index, method) {
+                                        if (player.isDisabled(get.subtype(card))) return 0.01;
+                                        var value = 0;
+                                        var info = get.info(card);
+                                        var current = player.getEquip(info.subtype);
+                                        if (current && card != current) {
+                                            value = get.value(current, player);
+                                        }
+                                        var equipValue = info.ai.equipValue;
+                                        if (equipValue == undefined) {
+                                            equipValue = info.ai.basic.equipValue;
+                                        }
+                                        if (typeof equipValue == 'function') {
+                                            if (method == 'raw') return equipValue(card, player);
+                                            if (method == 'raw2') return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != 'number') equipValue = 0;
+                                        if (method == 'raw') return equipValue;
+                                        if (method == 'raw2') return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: function (player, target, card) {
+                                        return get.equipResult(player, target, card.name);
+                                    },
+                                },
+                            },
+                        },
+                        "fayantong9": {
+                            image: 'ext:舰R战术/image/fayantong9.png',
+                            fullskin: true,
+                            type: "equip",
+                            subtype: "equip3",
+                            distance: {
+                                globalTo: 1,
+                            },
+                            enable: true,
+                            selectTarget: -1,
+                            filterTarget: function (card, player, target) {
+                                return target == player;
+                            },
+                            modTarget: true,
+                            allowMultiple: false,
+                            content: function () {
+                                if (cards.length && get.position(cards[0], true) == 'o') target.equip(cards[0]);
+                            },
+                            toself: true,
+                            ai: {
+                                basic: {
+                                    order: function (card, player) {
+                                        if (player && player.hasSkillTag('reverseEquip')) {
+                                            return 8.5 - get.equipValue(card, player) / 20;
+                                        }
+                                        else {
+                                            return 8 + get.equipValue(card, player) / 20;
+                                        }
+                                    },
+                                    useful: 2,
+                                    equipValue: 7,
+                                    value: function (card, player, index, method) {
+                                        if (player.isDisabled(get.subtype(card))) return 0.01;
+                                        var value = 0;
+                                        var info = get.info(card);
+                                        var current = player.getEquip(info.subtype);
+                                        if (current && card != current) {
+                                            value = get.value(current, player);
+                                        }
+                                        var equipValue = info.ai.equipValue;
+                                        if (equipValue == undefined) {
+                                            equipValue = info.ai.basic.equipValue;
+                                        }
+                                        if (typeof equipValue == 'function') {
+                                            if (method == 'raw') return equipValue(card, player);
+                                            if (method == 'raw2') return equipValue(card, player) - value;
+                                            return Math.max(0.1, equipValue(card, player) - value);
+                                        }
+                                        if (typeof equipValue != 'number') equipValue = 0;
+                                        if (method == 'raw') return equipValue;
+                                        if (method == 'raw2') return equipValue - value;
+                                        return Math.max(0.1, equipValue - value);
+                                    },
+                                },
+                                result: {
+                                    target: function (player, target, card) {
+                                        return get.equipResult(player, target, card.name);
+                                    },
+                                },
+                            },
+                        },
                     },
                     //上面是卡牌
-                    //
+                    //------------------------------------------------------------------------------------------------------------------//
                     //下面是技能
                     skill: {
                         paojixunlian9_skill: {
@@ -2280,6 +2402,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 player: "damageEnd",
                             },
                             filter(event, player) {
+                                if (player.hasSkillTag("unequip2")) return false;
                                 return event.source != undefined;
                             },
                             check(event, player) {
@@ -2632,6 +2755,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             filter(event, player, name) {
                                 //game.log(get.translation(event.card));
+                                if (player.hasSkillTag("unequip2")) return false;
                                 if (event.card && get.type(event.card) == "trick") {
                                     return event.num > 0;
                                 }
@@ -2841,6 +2965,10 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "leijishulian9_info": "出牌阶段，弃置1张手牌对一名角色使用。目标角色须弃置一张与你弃置牌相同花色的手牌，否则雷击熟练对该角色造成1点雷属性伤害。",
                         "shashanwuxietao": "卡牌兼容",
                         "shashanwuxietao_info": "杀闪桃无懈，无名杀的卡牌不容易互换，需要技能龙魂的帮助",
+                        "dongli9": "动力(改良)",
+                        "dongli9_info": "锁定技，你计算与其他角色的距离-1。",
+                        "fayantong9": "发烟筒",
+                        "fayantong9_info": "锁定技，其他角色计算与你的距离+1。",
                     },
                     list: [
                         ["heart", 1, "quanjiabantuji9"],
@@ -2849,11 +2977,11 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 4, "kuaixiu9"],
                         ["heart", 5, "chuanjiahangdan9"],
                         ["heart", 6, "kuaixiu9"],
-                        ["heart", 7, "huhangyuanhu9"],
+                        ["heart", 7, "fayantong9"],
                         ["heart", 8, "huhangyuanhu9"],
                         ["heart", 9, "qianshaoyuanhu9"],
                         ["heart", 10, "sheji9"],
-                        ["heart", 11, "qianshaoyuanhu9"],
+                        ["heart", 11, "fayantong9"],
                         ["heart", 12, "bianduiyuanhu9"],
                         ["heart", 13, "huibi9"],
                         ["heart", 1, "zhikongquan9"],
@@ -2880,7 +3008,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 9, "sheji9"],
                         ["diamond", 10, "sheji9"],
                         ["diamond", 11, "huibi9"],
-                        ["diamond", 12, "fangkongdanmu9"],
+                        ["diamond", 12, "dongli9"],
                         ["diamond", 13, "sheji9"],
                         ["diamond", 1, "chuanjialiudan9"],
                         ["diamond", 2, "bianduiyuanhu9"],
@@ -2894,7 +3022,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 10, "huibi9"],
                         ["diamond", 11, "huibi9"],
                         ["diamond", 12, "yuanchengdaodan9"],
-                        ["diamond", 13, "qianshaoyuanhu9"],
+                        ["diamond", 13, "dongli9"],
                         ["club", 1, "tantiaogongji9"],
                         ["club", 2, "guochuan9"],
                         ["club", 3, "sheji9"],
@@ -2918,12 +3046,12 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 8, "sheji9"],
                         ["club", 9, "zziqi9"],
                         ["club", 10, "shujujiaohu9"],
-                        ["club", 11, "leijishulian9"],
+                        ["club", 11, "yanhangleiji9"],
                         ["club", 12, "leijishulian9"],
-                        ["club", 13, "leijishulian9"],
+                        ["club", 13, "dongli9"],
                         ["spade", 1, "quanjiabantuji9"],
                         ["spade", 2, "zhuangjiajiaban9"],
-                        ["spade", 3, "shujujiaohu9"],
+                        ["spade", 3, "fayantong9"],
                         ["spade", 4, "fangkongdanmu9"],
                         ["spade", 5, "lanzusheji9"],
                         ["spade", 6, "paojixunlian9"],
@@ -2933,7 +3061,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 10, "sheji9"],
                         ["spade", 11, "zhikongquan9"],
                         ["spade", 12, "paojixunlian9"],
-                        ["spade", 13, "yanhangleiji9"],
+                        ["spade", 13, "fayantong9"],
                         ["spade", 1, "yingbeimao9"],
                         ["spade", 2, "jiaohusheji9"],
                         ["spade", 3, "zziqi9"],
