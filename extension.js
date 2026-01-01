@@ -1438,7 +1438,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 return player.countCards("h");
                             },
                             filterTarget: function (card, player, target) {
-                                return true;
+                                return target!=player;
                             },
                             modTarget: true,
                             content: function () {
@@ -1446,56 +1446,29 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 player.chooseCard(true, get.prompt2("shujujiaohu9"), "h", 1);
                                 "step 1";
                                 if (!result.bool) event.finish();
-                                target.storage.shujujiaohu9 = result.cards;
                                 player.give(result.cards, target);
                                 "step 2";
-                                var suit = get.suit(target.storage.shujujiaohu9);
-                                if (!target.countCards("h")) event._result = { control: "refanjian_hp" };
+                                if (target.countCards("he") < 2) event._result = { control: "shujujiaohu9_card1" };
                                 else
-                                    target.chooseControl("shujujiaohu9_card", "shujujiaohu9_hp").ai = function (event, player) {
-                                        var cards = player.getCards("he", { suit: get.suit(player.storage.shujujiaohu9) });
-                                        //game.log(get.attitude(player, event.player));
-                                        if (get.attitude(player, event.player) > 0) return 0;
-                                        if (cards.length >= 1) {
-                                            for (var i = 0; i < cards.length; i++) {
-                                                if (get.tag(cards[i], "save")) return 1;
-                                            }
-                                        }
-                                        if (player.hp == 1) return 0;
-                                        for (var i = 0; i < cards.length; i++) {
-                                            if (get.value(cards[i]) >= 8) return 1;
-                                        }
-                                        if (cards.length > 1 && player.hp > 2) return 1;
-                                        if (cards.length > 2) return 1;
-                                        return 0;
+                                    target.chooseControl("shujujiaohu9_card1", "shujujiaohu9_cards2").ai = function (event, player) {
+                                        if (player.countCards("he", function (card) {
+                                            return get.value(card) < 7;
+                                        }) > 1 || player.countCards("he", function (card) {
+                                            return get.value(card) > 9;
+                                        }) > 0
+                                        ) return 0;
+                                        return 1;
                                     };
                                 "step 3";
-                                if (result.control == "shujujiaohu9_card") {
-                                    target.showHandcards();
-                                } else if (result.control == "shujujiaohu9_hp") {
-                                    target.damage("nocard");
-                                    event.finish();
+                                if (result.control == "shujujiaohu9_card1") {
+                                    player
+                                        .gainPlayerCard(1, target, true)
+                                        .set("target", target)
+                                        .set("complexSelect", false)
+                                        .set("ai", lib.card.shunshou.ai.button);
+                                } else if (result.control == "shujujiaohu9_card2") {
+                                    target.chooseToGive("he", 2, player, true).set("prompt", "交给" + get.translation(player) + "两张牌");
                                 }
-                                "step 4";
-                                var suit = get.suit(target.storage.shujujiaohu9);
-                                if (player != target) {
-                                    target.give(
-                                        target.getCards("he", function (i) {
-                                            return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
-                                        }), player
-                                    );
-                                } else {
-                                    if (player.getCards("e", function (i) {
-                                        return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
-                                    }).length) {
-                                        player.gain(player.getCards("e", function (i) {
-                                            return get.suit(i) == suit && lib.filter.cardDiscardable(i, target, "shujujiaohu9");
-                                        }), "gain2");
-
-                                    }
-                                }
-                                if (target.isDamaged()) { target.recover(1); }
-                                delete target.storage.shujujiaohu9;
                             },
                             ai: {
                                 basic: {
@@ -1506,15 +1479,34 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 order: 9,
                                 tag: {
                                     loseCard: 1,
-                                    gain: 2,
-                                    damage: 1,
+                                    gain: 1,
                                 },
                                 wuxie: function (target, card, player, viewer) {
-                                    return 0;
+                                    if (get.attitude(player, target) > 0 && get.attitude(viewer, player) > 0) {
+                                        return 0;
+                                    }
                                 },
                                 result: {
                                     target: function (player, target) {
-                                        return -target.countCards("he") - (player.countCards("h", "du") ? 1 : 0);
+                                        if (get.attitude(player, target) <= 0)
+                                            return (
+                                                (target.countCards("he", function (card) {
+                                                    return (
+                                                        get.value(card, target) > 0
+                                                    );
+                                                }) > 0
+                                                    ? -0.3
+                                                    : 0.3) * Math.sqrt(player.countCards("h"))
+                                            );
+                                        return (
+                                            (target.countCards("ej", function (card) {
+                                                if (get.position(card) == "e") return get.value(card, target) <= 0;
+                                                var cardj = card.viewAs ? { name: card.viewAs } : card;
+                                                return get.effect(target, cardj, target, player) < 0;
+                                            }) > 0
+                                                ? 1.5
+                                                : -0.3) * Math.sqrt(player.countCards("h"))
+                                        );
                                     },
                                 },
                             },
@@ -3069,9 +3061,9 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "qianshaoyuanhu9": "前哨援护",
                         "qianshaoyuanhu9_info": "对一名没有护甲的角色使用，其获得一点护甲。",
                         "shujujiaohu9": "数据交互",
-                        "shujujiaohu9_info": "出牌阶段，对一名角色使用。你展示一张手牌并交给目标角色，然后令选择以下一项发动：1.交给你所有相同花色的手牌，然后恢复1点体力。2.受到1点伤害。",
-                        "shujujiaohu9_card": "交出牌",
-                        "shujujiaohu9_hp": "受伤害",
+                        "shujujiaohu9_info": "出牌阶段，对一名其它角色使用。你展示一张手牌并交给目标角色，然后令选择以下一项发动：1.交给你两张牌。2.令你获得其区域内的一张牌。",
+                        "shujujiaohu9_card2": "交出2张牌",
+                        "shujujiaohu9_card1": "令其获得你区域内1张牌",
                         "yinghuazhuangjia9": "硬化装甲",
                         "yinghuazhuangjia9_info": "你获得“装甲防护”直到你的下回合开始。",
                         "lanzusheji9": "拦阻射击",
