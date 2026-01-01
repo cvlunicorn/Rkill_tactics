@@ -2292,6 +2292,151 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
+                        "lastfriend9": {
+                            image: 'ext:舰R战术/image/lastfriend9.png',
+                            audio: true,
+                            type: "trick",
+                            enable: true,
+                            filterTarget: function (card, player, target) {
+                                return true /*target != player*/;
+                            },
+                            selectTarget: 2,
+                            complexTarget: true,
+                            content: function () {
+                                "step 0"
+                                event.target = target;
+                                target.link(); if (target.isFriendOf(player)) { player.draw(); };
+                            },
+                            chongzhu: true,
+                            ai: {
+                                wuxie: function (target, card, player, viewer) {
+                                    if (_status.event.getRand() < 0.5) return 0;
+                                    if (!target.hasSkill('tengjia2') && get.attitude(viewer, player) > 0) {
+                                        return 0;
+                                    }
+                                    if (target.hp > 2 && get.attitude(viewer, player) > 0) {
+                                        return 0;
+                                    }
+                                },
+                                basic: {
+                                    useful: 4,
+                                    value: 4,
+                                    order: 7,
+                                },
+                                result: {
+                                    target: function (player, target) {
+                                        if (target.isLinked()) {
+                                            if (target.hasSkillTag('link')) return 0;
+                                            var f = target.hasSkillTag('nofire');
+                                            var t = target.hasSkillTag('nothunder');
+                                            if (f && t) return 0;
+                                            if (f || t) return 0.5;
+                                            return 2;
+                                        }
+                                        if (get.attitude(player, target) >= 0) return -0.9;
+                                        if (ui.selected.targets.length) return -0.9;
+                                        if (game.hasPlayer(function (current) {
+                                            return get.attitude(player, current) <= -1 && current != target && !current.isLinked();
+                                        })) {
+                                            return -0.9;
+                                        }
+                                        return 0;
+                                    },
+                                },
+                                tag: {
+                                    multitarget: 1,
+                                    multineg: 1,
+                                    norepeat: 1,
+                                },
+                            },
+                            fullskin: true,
+                        },
+                        "xiji9": {
+                            image: 'ext:舰R战术/image/xiji9.png',
+                            audio: true,
+                            fullskin: true,
+                            type: "trick",
+                            enable: true,
+                            selectTarget: 1,
+                            postAi: function (targets) {
+                                return targets.length == 1 && targets[0].countCards('j');
+                            },
+                            filterTarget: function (card, player, target) {
+                                if (player == target) return false;
+                                return target.countDiscardableCards(player, get.is.single() ? 'he' : 'hej');
+                            },
+                            "yingbian_prompt": "当你使用此牌选择目标后，你可为此牌增加一个目标",
+                            "yingbian_tags": ["add"],
+                            yingbian: function (event) {
+                                event.yingbian_addTarget = true;
+                            },
+                            content: function () {
+                                'step 0'
+                                if (!get.is.single() && target.countDiscardableCards(player, 'hej')) {
+                                    player.discardPlayerCard('hej', target, true);
+                                    event.finish();
+                                }
+                                else {
+                                    var bool1 = target.countDiscardableCards(player, 'h');
+                                    var bool2 = target.countDiscardableCards(player, 'e');
+                                    if (bool1 && bool2) {
+                                        player.chooseControl('手牌区', '装备区').set('ai', function () {
+                                            return Math.random() < 0.5 ? 1 : 0;
+                                        }).set('prompt', '弃置' + (get.translation(target)) + '装备区的一张牌，或观看其手牌并弃置其中的一张牌。');
+                                    }
+                                    else event._result = { control: bool1 ? '手牌区' : '装备区' };
+                                }
+                                'step 1'
+                                var pos = result.control == '手牌区' ? 'h' : 'e';
+                                player.discardPlayerCard(target, pos, true, 'visible');
+                            },
+                            ai: {
+                                basic: {
+                                    order: 9,
+                                    useful: 5,
+                                    value: 5,
+                                },
+                                yingbian: function (card, player, targets, viewer) {
+                                    if (get.attitude(viewer, player) <= 0) return 0;
+                                    if (game.hasPlayer(function (current) {
+                                        return !targets.contains(current) && lib.filter.targetEnabled2(card, player, current) && get.effect(current, card, player, player) > 0;
+                                    })) return 6;
+                                    return 0;
+                                },
+                                result: {
+                                    target: function (player, target) {
+                                        var att = get.attitude(player, target);
+                                        var nh = target.countCards('h');
+                                        if (att > 0) {
+                                            if (target.countCards('j', function (card) {
+                                                var cardj = card.viewAs ? { name: card.viewAs } : card;
+                                                return get.effect(target, cardj, target, player) < 0;
+                                            }) > 0) return 5;
+                                            if (target.getEquip('baiyin') && target.isDamaged() &&
+                                                get.recoverEffect(target, player, player) > 0) {
+                                                if (target.hp == 1) return 3;
+                                            }
+                                            if (target.countCards('e', function (card) {
+                                                if (get.position(card) == 'e') return get.value(card, target) < 0;
+                                            }) > 0) return 1;
+                                        }
+                                        var es = target.getCards('e');
+                                        var noe = (es.length == 0 || target.hasSkillTag('noe'));
+                                        var noe2 = (es.filter(function (esx) {
+                                            return get.value(esx, target) > 0;
+                                        }).length == 0);
+                                        var noh = (nh == 0 || target.hasSkillTag('noh'));
+                                        if (noh && (noe || noe2)) return 0;
+                                        if (att <= 0 && !target.countCards('he')) return 1.5;
+                                        return -1.5;
+                                    },
+                                },
+                                tag: {
+                                    loseCard: 1,
+                                    discard: 1,
+                                },
+                            },
+                        },
                     },
                     //上面是卡牌
                     //------------------------------------------------------------------------------------------------------------------//
@@ -2969,6 +3114,10 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "dongli9_info": "锁定技，你计算与其他角色的距离-1。",
                         "fayantong9": "发烟筒",
                         "fayantong9_info": "锁定技，其他角色计算与你的距离+1。",
+                        "lastfriend9": "最后的队友",
+                        "lastfriend9_info": "出牌阶段使用，选择2个角色，分别横置或重置这些角色。若包含队友，则令你与目标摸一张牌。",
+                        "xiji9": "偷袭",
+                        "xiji9_info": "出牌阶段，对区域里有牌的一名其他角色使用。你弃置其区域里的一张牌。",
                     },
                     list: [
                         ["heart", 1, "quanjiabantuji9"],
@@ -2977,7 +3126,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 4, "kuaixiu9"],
                         ["heart", 5, "chuanjiahangdan9"],
                         ["heart", 6, "kuaixiu9"],
-                        ["heart", 7, "fayantong9"],
+                        ["heart", 7, "xiji9"],
                         ["heart", 8, "huhangyuanhu9"],
                         ["heart", 9, "qianshaoyuanhu9"],
                         ["heart", 10, "sheji9"],
@@ -2985,7 +3134,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 12, "bianduiyuanhu9"],
                         ["heart", 13, "huibi9"],
                         ["heart", 1, "zhikongquan9"],
-                        ["heart", 2, "yuanchengdaodan9"],
+                        ["heart", 2, "lastfriend9"],
                         ["heart", 3, "yuanchengdaodan9"],
                         ["heart", 4, "sheji9"],
                         ["heart", 5, "kuaixiu9"],
@@ -3021,7 +3170,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 9, "zziqi9"],
                         ["diamond", 10, "huibi9"],
                         ["diamond", 11, "huibi9"],
-                        ["diamond", 12, "yuanchengdaodan9"],
+                        ["diamond", 12, "lastfriend9"],
                         ["diamond", 13, "dongli9"],
                         ["club", 1, "tantiaogongji9"],
                         ["club", 2, "guochuan9"],
@@ -3075,59 +3224,6 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["spade", 11, "yinghuazhuangjia9"],
                         ["spade", 12, "yinghuazhuangjia9"],
                         ["spade", 13, "zhikongquan9"],
-                        /*  ["heart", 10, "huhangyuanhu9"],
-                         ["heart", 11, "huhangyuanhu9"],
-                         ["heart", 12, "huhangyuanhu9"],
-                         ["club", 10, "paojixunlian9"],
-                         ["club", 11, "paojixunlian9"],
-                         ["club", 12, "paojixunlian9"],
-                         ["spade", 1, "yuanchengdaodan9"],
-                         ["spade", 3, "yuanchengdaodan9"],
-                         ["spade", 4, "yuanchengdaodan9"],
-                         ["club", 3, "ganraodan9"],
-                         ["club", 4, "ganraodan9"],
-                         ["club", 5, "ganraodan9"],
-                         ["diamond", 3, "ganraodan9"],
-                         ["diamond", 4, "ganraodan9"],
-                         ["diamond", 5, "ganraodan9"],
-                         ["diamond", 6, "ganraodan9"],
-                         ["club", 8, "yanhangleiji9"],
-                         ["club", 9, "yanhangleiji9"],
-                         ["spade", 10, "yanhangleiji9"],
-                         ["spade", 11, "yanhangleiji9"],
-                         ["diamond", 2, "tanzhaodeng9"],
-                         ["spade", 2, "jiaohusheji9"],
-                         ["spade", 1, "yingbeimao9"],
-                         ["heart", 2, "guochuan9"],
-                         ["heart", 7, "qianshaoyuanhu9"],
-                         ["diamond", 7, "qianshaoyuanhu9"],
-                         ["diamond", 9, "qianshaoyuanhu9"],
-                         ["club", 7, "shujujiaohu9"],
-                         ["spade", 7, "shujujiaohu9"],
-                         ["spade", 9, "shujujiaohu9"],
-                         ["spade", 11, "yinghuazhuangjia9"],
-                         ["spade", 13, "yinghuazhuangjia9"],
-                         ["heart", 1, "bianduiyuanhu9"],
-                         ["heart", 13, "bianduiyuanhu9"],
-                         ["club", 13, "tantiaogongji9"],
-                         ["diamond", 4, "lanzusheji9"],
-                         ["club", 8, "duihaijingjieshao9"],
-                         ["club", 6, "zhaomingdanjiaozheng9"],
-                         ["club", 2, "gailiangbeimaodan9"],
-                         ["diamond", 1, "chuanjialiudan9"],
-                         ["heart", 3, "chuanjiahangdan9"],
-                         ["heart", 6, "zhuangjiajiaban9"],
-                         ["heart", 8, "quanjiabantuji9"],
-                         ["heart", 9, "quanjiabantuji9"],
-                         ["spade", 5, "duikongyujing9"],
-                         ["spade", 6, "duikongyujing9"],
-                         ["spade", 8, "duikongyujing9"],
-                         ["diamond", 10, "fangkongdanmu9"],
-                         ["diamond", 11, "fangkongdanmu9"],
-                         ["diamond", 12, "fangkongdanmu9"],
-                         ["diamond", 6, "leijishulian9"],
-                         ["club", 5, "leijishulian9", "thunder"],
-                         ["club", 6, "leijishulian9", "thunder"], */
 
                     ],//牌堆添加
                 };
