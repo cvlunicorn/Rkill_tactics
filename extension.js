@@ -2481,7 +2481,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                         listm = listm.concat(listv);
                                         var func = function (skill) {
                                             var info = get.info(skill);
-                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) || lib.skill.pangguanzhe.bannedList.includes(skill) || get.is.locked(skill)) return false;
+                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) ||  get.is.locked(skill)) return false;
                                             return true;
                                         };
                                         for (var i = 0; i < listm.length; i++) {
