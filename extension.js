@@ -1450,7 +1450,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 "step 2";
                                 if (target.countCards("he") < 2) event._result = { control: "shujujiaohu9_card1" };
                                 else
-                                    target.chooseControl("shujujiaohu9_card1", "shujujiaohu9_cards2").ai = function (event, player) {
+                                    target.chooseControl("shujujiaohu9_card1", "shujujiaohu9_card2").ai = function (event, player) {
                                         if (player.countCards("he", function (card) {
                                             return get.value(card) < 7;
                                         }) > 1 || player.countCards("he", function (card) {
