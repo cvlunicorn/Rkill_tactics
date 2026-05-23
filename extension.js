@@ -2162,8 +2162,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                             },
                             selectTarget: 1,
                         },
-                        "dongligailiang9": {
-                            image: 'ext:舰R战术/image/dongligailiang9.png',
+                        "dongli9": {
+                            image: 'ext:舰R战术/image/dongli9.png',
                             fullskin: true,
                             type: "equip",
                             subtype: "equip4",
@@ -2284,8 +2284,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                 },
                             },
                         },
-                        "zuihoudeduiyou9": {
-                            image: 'ext:舰R战术/image/zuihoudeduiyou9.png',
+                        "lastfriend9": {
+                            image: 'ext:舰R战术/image/lastfriend9.png',
                             audio: true,
                             type: "trick",
                             enable: true,
@@ -2481,7 +2481,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                                         listm = listm.concat(listv);
                                         var func = function (skill) {
                                             var info = get.info(skill);
-                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) ||  get.is.locked(skill)) return false;
+                                            if (!info || info.charlotte || info.hiddenSkill || info.zhuSkill || info.juexingji || info.limited || info.dutySkill || (info.unique && !info.gainable) || lib.skill.pangguanzhe.bannedList.includes(skill) || get.is.locked(skill)) return false;
                                             return true;
                                         };
                                         for (var i = 0; i < listm.length; i++) {
@@ -3102,12 +3102,12 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         "leijishulian9_info": "出牌阶段，弃置1张手牌对一名角色使用。目标角色须弃置一张与你弃置牌相同花色的手牌，否则雷击熟练对该角色造成1点雷属性伤害。",
                         "shashanwuxietao": "卡牌兼容",
                         "shashanwuxietao_info": "杀闪桃无懈，无名杀的卡牌不容易互换，需要技能龙魂的帮助",
-                        "dongligailiang9": "动力(改良)",
-                        "dongligailiang9_info": "锁定技，你计算与其他角色的距离-1。",
+                        "dongli9": "动力(改良)",
+                        "dongli9_info": "锁定技，你计算与其他角色的距离-1。",
                         "fayantong9": "发烟筒",
                         "fayantong9_info": "锁定技，其他角色计算与你的距离+1。",
-                        "zuihoudeduiyou9": "最后的队友",
-                        "zuihoudeduiyou9_info": "出牌阶段使用，选择2个角色，分别横置或重置这些角色。若包含队友，则令你与目标摸一张牌。",
+                        "lastfriend9": "最后的队友",
+                        "lastfriend9_info": "出牌阶段使用，选择2个角色，分别横置或重置这些角色。若包含队友，则令你与目标摸一张牌。",
                         "xiji9": "偷袭",
                         "xiji9_info": "出牌阶段，对区域里有牌的一名其他角色使用。你弃置其区域里的一张牌。",
                     },
@@ -3126,7 +3126,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["heart", 12, "bianduiyuanhu9"],
                         ["heart", 13, "huibi9"],
                         ["heart", 1, "zhikongquan9"],
-                        ["heart", 2, "zuihoudeduiyou9"],
+                        ["heart", 2, "lastfriend9"],
                         ["heart", 3, "yuanchengdaodan9"],
                         ["heart", 4, "sheji9"],
                         ["heart", 5, "kuaixiu9"],
@@ -3149,7 +3149,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 9, "sheji9"],
                         ["diamond", 10, "sheji9"],
                         ["diamond", 11, "huibi9"],
-                        ["diamond", 12, "dongligailiang9"],
+                        ["diamond", 12, "dongli9"],
                         ["diamond", 13, "sheji9"],
                         ["diamond", 1, "chuanjialiudan9"],
                         ["diamond", 2, "bianduiyuanhu9"],
@@ -3162,8 +3162,8 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["diamond", 9, "zziqi9"],
                         ["diamond", 10, "huibi9"],
                         ["diamond", 11, "huibi9"],
-                        ["diamond", 12, "zuihoudeduiyou9"],
-                        ["diamond", 13, "dongligailiang9"],
+                        ["diamond", 12, "lastfriend9"],
+                        ["diamond", 13, "dongli9"],
                         ["club", 1, "tantiaogongji9"],
                         ["club", 2, "guochuan9"],
                         ["club", 3, "sheji9"],
@@ -3189,7 +3189,7 @@ game.import("extension", function (lib, game, ui, get, ai, _status) {
                         ["club", 10, "shujujiaohu9"],
                         ["club", 11, "yanhangleiji9"],
                         ["club", 12, "leijishulian9"],
-                        ["club", 13, "dongligailiang9"],
+                        ["club", 13, "dongli9"],
                         ["spade", 1, "quanjiabantuji9"],
                         ["spade", 2, "zhuangjiajiaban9"],
                         ["spade", 3, "fayantong9"],
